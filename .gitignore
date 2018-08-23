@@ -90,5 +90,8 @@ ENV/
 # Rope project settings
 .ropeproject
 
+# Visual Studio settings
+.vs
+
 # Data fetched at runtime
 data/
