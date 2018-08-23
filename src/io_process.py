@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+import os
+import requests
+
 from src import senders
 from src.battlelog_parsing import battlelog_parsing
 from src.login import log_in
@@ -94,7 +97,44 @@ async def battle_tag(websocket, message, usage):
         except IndexError:
             pass
 
-async def stringing(websocket, message, usage=0):
+async def update_json():
+    """
+    Update JSON files with the latest from the server
+    """
+
+    print("Grabbing latest JSON files from the Showdown servers")
+
+    formats_url = "https://play.pokemonshowdown.com/data/formats-data.js"
+    moves_url = "https://play.pokemonshowdown.com/data/moves.js"
+    pokedex_url = "https://play.pokemonshowdown.com/data/pokedex.js"
+    typechart_url = "https://play.pokemonshowdown.com/data/typechart.js"
+
+    formats_request = requests.get(formats_url)
+    moves_request = requests.get(moves_url)
+    pokedex_request = requests.get(pokedex_url)
+    typechart_request = requests.get(typechart_url)
+
+    # File IO
+    os.makedirs("data", exist_ok=True)
+    formats = open("data/formats-data.json", "w+", encoding='utf-8')
+    moves = open("data/moves.json", "w+", encoding='utf-8')
+    pokedex = open("data/pokedex.json", "w+", encoding='utf-8')
+    typechart = open("data/typechart.json", "w+", encoding='utf-8')
+
+    # These are Javascript files; we need to get everything between the 
+    # equals sign and the first semicolon
+    formats.write(formats_request.text.split("=")[1].lstrip()[:-1])
+    formats.close()
+    moves.write(moves_request.text.split("=")[1].lstrip()[:-1])
+    moves.close()
+    pokedex.write(pokedex_request.text.split("=")[1].lstrip()[:-1])
+    pokedex.close()
+    typechart.write(typechart_request.text.split("=")[1].lstrip()[:-1])
+    typechart.close()
+    
+    print("All JSON has been updated")
+
+async def string_to_action(websocket, message, usage=0):
     """
     First filtering function on received messages.
     Handle challenge and research actions.
@@ -107,8 +147,6 @@ async def stringing(websocket, message, usage=0):
     global nb_fights_simu_max
     global battles
     global formats
-
-    print("Server message: " + message)
 
     string_tab = message.split('|')
     if string_tab[1] == "challstr":

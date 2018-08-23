@@ -2,42 +2,21 @@
 
 import asyncio
 import websockets
+import requests
 
-from src.io_process import stringing
+from src.io_process import string_to_action, update_json
 
 async def main():
     """
     Loading function. Connect websocket then launch bot.
     """
+    await update_json()
+
     async with websockets.connect('ws://sim.smogon.com:8000/showdown/websocket') as websocket:
         while True:
             message = await websocket.recv()
             print("<< {}".format(message))
-            await stringing(websocket, message)
-
-
-def test():
-    """
-    Test function. Allow to test damages calculation between two pokemons.
-    """
-    from src.battle import Battle
-    from src.pokemon import Pokemon, Status
-    from src.move_efficiency import effi_move
-
-    battle = Battle("Test Battletag")
-    pkm1 = Pokemon("Abomasnow", "", True, 100)
-    # pkm1.status = Status.BRN
-    pkm1.load_unknown()
-    pkm2 = Pokemon("Abomasnow", "", True, 100)
-    # pkm2.item = "airballoon"
-    pkm2.load_unknown()
-
-    # print(pkm1.moves)
-    for move in pkm1.moves:
-        print(move["name"])
-    print(effi_move(pkm1.moves[7], pkm1, pkm2, []))
-
+            await string_to_action(websocket, message)
 
 if __name__ == "__main__":
     asyncio.get_event_loop().run_until_complete(main())
-    # test()
