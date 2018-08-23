@@ -14,6 +14,7 @@ async def log_in(websocket, challid, chall):
     with open(sys.path[0] + "/src/id.txt") as logfile:
         username = logfile.readline()[:-1]
         password = logfile.readline()[:-1]
+    print("Logging in as " + username + " with password " + password)
     resp = requests.post("https://play.pokemonshowdown.com/action.php?",
                          data={
                             'act': 'login',

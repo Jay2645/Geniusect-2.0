@@ -108,6 +108,8 @@ async def stringing(websocket, message, usage=0):
     global battles
     global formats
 
+    print("Server message: " + message)
+
     string_tab = message.split('|')
     if string_tab[1] == "challstr":
         # If we got the challstr, we now can log in.

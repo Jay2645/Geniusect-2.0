@@ -20,9 +20,11 @@ def test():
     """
     Test function. Allow to test damages calculation between two pokemons.
     """
+    from src.battle import Battle
     from src.pokemon import Pokemon, Status
     from src.move_efficiency import effi_move
 
+    battle = Battle("Test Battletag")
     pkm1 = Pokemon("Abomasnow", "", True, 100)
     # pkm1.status = Status.BRN
     pkm1.load_unknown()

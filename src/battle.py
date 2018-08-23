@@ -4,6 +4,7 @@ import json
 from src.ia import make_best_action, make_best_switch, make_best_move, make_best_order
 from src.pokemon import Pokemon, Team, Status
 from src import senders
+from json import JSONDecodeError
 
 
 class Battle:
@@ -27,6 +28,7 @@ class Battle:
             "lightscreen": False,
             "reflect": False
         }
+        print("Battle started")
 
     async def req_loader(self, req, websocket):
         """
@@ -34,7 +36,20 @@ class Battle:
         :param req: json sent by server.
         :param websocket: Websocket stream.
         """
-        jsonobj = json.loads(req)
+        if req is "":
+            print("Null request")
+            return
+
+        print("Recieved request: " + str(req))
+
+        try:
+            jsonobj = json.loads(req)
+        except JSONDecodeError as e:
+            print("JSON decode error: " + str(e))
+            print("Request: " + req)
+            exit(2)
+        print("New JSON: " + str(jsonobj))
+
         self.turn += 2
         objteam = jsonobj['side']['pokemon']
         self.bot_team = Team()
@@ -49,6 +64,7 @@ class Battle:
                 print("\033[31m" + "IndexError: " + str(e))
                 print(pkm + "\033[0m")
                 exit(2)
+        print(str(self.bot_team))
         if "forceSwitch" in jsonobj.keys():
             await self.make_switch(websocket)
         elif "active" in jsonobj.keys():

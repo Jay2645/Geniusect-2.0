@@ -28,8 +28,15 @@ def infos_for_pokemon(pkm_name):
         "baseStats": {},
         "possibleMoves": []
     }
+
     with open('data/pokedex.json') as data_file:
-        pokemon = json.load(data_file)[pkm_name]
+        try:
+            pokemon = json.load(data_file)[pkm_name]
+        except KeyError:
+            print("Pokemon not found: " + pkm_name)
+            print("JSON likely out of date")
+            exit(2)
+
     res["types"] = pokemon["types"]
     res["possibleAbilities"] = list(pokemon["abilities"].values())
     res["baseStats"] = pokemon["baseStats"]
