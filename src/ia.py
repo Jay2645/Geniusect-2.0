@@ -89,16 +89,20 @@ def make_best_move(battle):
     :return: (Index of move in pokemon (Integer, [-1, 4]), efficiency (Integer, [0, +oo[))
     """
     pokemon_moves = battle.current_pkm[0]["moves"]
+    for move in pokemon_moves:
+        print("Valid move: " + move["move"])
+
     pokemon = battle.bot_team.active()
     enemy_pkm = battle.enemy_team.active()
     best_move = (None, -1)
 
     if len(pokemon_moves) == 1:  # Case Outrage, Mania, Phantom Force, etc.
+        print("Locked into one move!")
         for move in pokemon.moves:
             if move["name"] == pokemon_moves[0]["move"]:
                 return 1, effi_move(battle, move, pokemon, enemy_pkm, battle.enemy_team)
-        else:
-            return 1, 0
+            else:
+                return 1, 0
 
     for i, move in enumerate(pokemon.moves):  # Classical parse
         if "disabled" in pokemon_moves[i].keys() and pokemon_moves[i]["disabled"]:
@@ -121,10 +125,21 @@ def make_best_action(battle):
     :param battle: Battle object, current battle.
     :return: (Index of move in pokemon (["move"|"switch"], Integer, [-1, 6]))
     """
+
     best_enm_atk = 0
     best_bot_atk = 0
+
     bot_pkm = battle.bot_team.active()
     enm_pkm = battle.enemy_team.active()
+
+    if bot_pkm is None:
+        raise RuntimeError("We have no active Pokemon")
+    elif enm_pkm is None:
+        raise RuntimeError("Cannot find any active enemy Pokemon")
+
+    print("Our Pokemon: " + bot_pkm.name)
+    print("Enemy Pokemon:" + enm_pkm.name)
+
     for move in bot_pkm.moves:
         effi = effi_move(battle, move, bot_pkm, enm_pkm, battle.enemy_team)
         if best_bot_atk < effi:
@@ -133,12 +148,17 @@ def make_best_action(battle):
         effi = effi_move(battle, move, enm_pkm, bot_pkm, battle.enemy_team)
         if best_enm_atk < effi:
             best_enm_atk = effi
+    print("Our best attack score: " + str(best_bot_atk))
+    print("Enemy best attack score: " + str(best_enm_atk))
 
     switch = make_best_switch(battle)
-    if (switch[1] > effi_pkm(battle, bot_pkm, enm_pkm, battle.enemy_team)
+    if (battle.current_pkm is None
+        or switch[1] > effi_pkm(battle, bot_pkm, enm_pkm, battle.enemy_team)
         and (best_enm_atk > comparator_calculation(150, bot_pkm, enm_pkm)
              and (bot_pkm.stats["spe"] * bot_pkm.buff_affect("spe")
                   - enm_pkm.stats["spe"] * bot_pkm.buff_affect("spe")) < 10
              or best_bot_atk < comparator_calculation(100, bot_pkm, enm_pkm)) and switch[0]):
+        print("Switching to " + str(switch[0]))
         return "switch", switch[0]
+    print("Staying in battle and using our best move")
     return ["move"] + [i for i in make_best_move(battle)]

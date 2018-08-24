@@ -1,6 +1,4 @@
 from enum import Enum
-import json
-
 
 class Status(Enum):
     """
@@ -15,12 +13,13 @@ class Status(Enum):
     FRZ = 6
 
 
-def infos_for_pokemon(pkm_name):
+def pokemon_from_json(pkm_name):
     """
     Filtrate, regroup and translate data from json files.
     :param pkm_name: Pokemon's name
     :return: Dict. {types, possibleAbilities, baseStats, possibleMoves}
     """
+
     pkm_name = pkm_name.lower().replace('-', '').replace(' ', '').replace('%', '').replace('\'', '').replace('.', '')
     res = {
         "types": [],
@@ -29,24 +28,15 @@ def infos_for_pokemon(pkm_name):
         "possibleMoves": []
     }
 
-    with open('data/pokedex.json') as data_file:
-        try:
-            pokemon = json.load(data_file)[pkm_name]
-        except KeyError:
-            print("Pokemon not found: " + pkm_name)
-            print("JSON likely out of date")
-            exit(2)
-
+    # All data should already be parsed and stored in our Login singleton
+    from src.login import Login
+    login = Login()
+    pokemon = login.pokemon[pkm_name]
     res["types"] = pokemon["types"]
     res["possibleAbilities"] = list(pokemon["abilities"].values())
     res["baseStats"] = pokemon["baseStats"]
-    with open('data/formats-data.json') as data_file:
-        try:
-            pokemon_moves = json.load(data_file)[pkm_name]["randomBattleMoves"]
-        except KeyError:
-            pokemon_moves = []
-    with open("data/moves.json") as data_file:
-        moves = json.load(data_file)
+    pokemon_moves = login.format_moves[pkm_name]["randomBattleMoves"]
+    moves = login.moves
     for move in pokemon_moves:
         res["possibleMoves"].append(moves[move])
     return res
@@ -57,13 +47,14 @@ class Pokemon:
     Pokemon class.
     Handle everything corresponding to it.
     """
-    def __init__(self, name, condition, active, level):
+    def __init__(self, battle, name, condition, active, level):
         """
         Init Pokemon method.
         :param name: name of Pokemon.
         :param condition: ### TODO ###
         :param active: Bool.
         """
+        self.battle = battle
         self.name = name
         self.condition = condition
         self.status = Status.UNK
@@ -88,7 +79,7 @@ class Pokemon:
         """
         Load every information of pokemon from datafiles and store them
         """
-        infos = infos_for_pokemon(self.name)
+        infos = pokemon_from_json(self.name)
         self.types = infos["types"]
         self.abilities = infos["possibleAbilities"]
         self.stats = infos["baseStats"]
@@ -102,15 +93,16 @@ class Pokemon:
         :param stats: Dict. {hp, atk, def, spa, spd, spe}
         :param moves: Array. Not used.
         """
-        infos = infos_for_pokemon(self.name)
+        infos = pokemon_from_json(self.name)
         self.types = infos["types"]
         self.abilities = abilities
         self.item = item
         self.stats = infos["baseStats"]
-        with open("data/moves.json") as data_file:
-            json_file = json.load(data_file)
-            for move in moves:
-                self.moves.append(json_file[move.replace('60', '')])
+
+        from src.login import Login
+        login = Login()
+        for move in moves:
+            self.moves.append(login.moves[move.replace('60', '')])
 
     def buff_affect(self, stat):
         """
@@ -150,7 +142,7 @@ class Team:
 
     def add(self, pokemon):
         """
-        Add pokemon ton self.pokemons array. Exit and print error message if Team is full (6 pokemons)
+        Add pokemon to self.pokemons array. Exit and print error message if Team is full (6 pokemons)
         :param pokemon: Pokemon
         """
         if len(self.pokemons) < 6:

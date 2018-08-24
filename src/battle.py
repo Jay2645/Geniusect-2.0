@@ -1,10 +1,10 @@
 import re
 import json
+from json import JSONDecodeError
 
 from src.ia import make_best_action, make_best_switch, make_best_move, make_best_order
 from src.pokemon import Pokemon, Team, Status
 from src import senders
-from json import JSONDecodeError
 
 
 class Battle:
@@ -13,16 +13,16 @@ class Battle:
     Unique for each battle.
     Handle everything concerning it.
     """
-    def __init__(self, battletag):
+    def __init__(self, battle_id):
         """
         init Battle method.
-        :param battletag: String, battletag of battle.
+        :param battle_id: String, battle_id of battle.
         """
         self.bot_team = Team()
         self.enemy_team = Team()
         self.current_pkm = None
         self.turn = 0
-        self.battletag = battletag
+        self.battle_id = battle_id
         self.player_id = ""
         self.screens = {
             "lightscreen": False,
@@ -40,22 +40,28 @@ class Battle:
             print("Null request")
             return
 
-        print("Recieved request: " + str(req))
+        print("Beginning new turn")
 
         try:
             jsonobj = json.loads(req)
         except JSONDecodeError as e:
             print("JSON decode error: " + str(e))
             print("Request: " + req)
-            exit(2)
-        print("New JSON: " + str(jsonobj))
+            from src.login import Login
+            login = Login()
+            login.forfeit_match(self)
+            return
 
         self.turn += 2
         objteam = jsonobj['side']['pokemon']
         self.bot_team = Team()
+
+        if "active" in jsonobj.keys():
+            self.current_pkm = jsonobj["active"]
+
         for pkm in objteam:
             try:
-                newpkm = Pokemon(pkm['details'].split(',')[0], pkm['condition'], pkm['active'],
+                newpkm = Pokemon(self, pkm['details'].split(',')[0], pkm['condition'], pkm['active'],
                                  pkm['details'].split(',')[1].split('L')[1]
                                  if len(pkm['details']) > 1 and 'L' in pkm['details'] else 100)
                 newpkm.load_known([pkm['baseAbility']], pkm["item"], pkm['stats'], pkm['moves'])
@@ -63,12 +69,13 @@ class Battle:
             except IndexError as e:
                 print("\033[31m" + "IndexError: " + str(e))
                 print(pkm + "\033[0m")
-                exit(2)
-        print(str(self.bot_team))
+                from src.login import Login
+                login = Login()
+                login.forfeit_match(self)
+                return
+
         if "forceSwitch" in jsonobj.keys():
             await self.make_switch(websocket)
-        elif "active" in jsonobj.keys():
-            self.current_pkm = jsonobj["active"]
 
     def update_enemy(self, pkm_name, level, condition):
         """
@@ -90,7 +97,7 @@ class Battle:
         if pkm_name not in self.enemy_team:
             for pkm in self.enemy_team.pokemons:
                 pkm.active = False
-            pkm = Pokemon(pkm_name, condition, True, level)
+            pkm = Pokemon(self, pkm_name, condition, True, level)
             pkm.load_unknown()
             self.enemy_team.add(pkm)
         else:
@@ -139,8 +146,10 @@ class Battle:
         Call function to correctly choose the first pokemon to send.
         :param websocket: Websocket stream.
         """
-        order = "".join([str(x[0]) for x in make_best_order(self, self.battletag.split('-')[1])])
-        await senders.sendmessage(websocket, self.battletag, "/team " + order + "|" + str(self.turn))
+        print("Making team order")
+
+        order = "".join([str(x[0]) for x in make_best_order(self, self.battle_id.split('-')[1])])
+        await senders.sendmessage(websocket, self.battle_id, "/team " + order + "|" + str(self.turn))
 
     async def make_move(self, websocket, best_move=None):
         """
@@ -148,15 +157,16 @@ class Battle:
         :param websocket: Websocket stream.
         :param best_move: [int, int] : [id of best move, value].
         """
+        print("Making a move")
         if not best_move:
             best_move = make_best_move(self)
         if best_move[1] < 20:
             print("Best move power < 20. Move list : "
                   + ", ".join([move["move"] for move in self.current_pkm[0]['moves']]) + ".")
         if "canMegaEvo" in self.current_pkm[0]:
-            await senders.sendmove(websocket, self.battletag, str(best_move[0]) + " mega", self.turn)
+            await senders.sendmove(websocket, self.battle_id, str(best_move[0]) + " mega", self.turn)
         else:
-            await senders.sendmove(websocket, self.battletag, best_move[0], self.turn)
+            await senders.sendmove(websocket, self.battle_id, best_move[0], self.turn)
 
     async def make_switch(self, websocket, best_switch=None):
         """
@@ -164,17 +174,21 @@ class Battle:
         :param websocket: Websocket stream.
         :param best_switch: int, id of pokemon to switch.
         """
+        print("Making a switch")
         if not best_switch:
             best_switch = make_best_switch(self)[0]
-        await senders.sendswitch(websocket, self.battletag, best_switch, self.turn)
+        await senders.sendswitch(websocket, self.battle_id, best_switch, self.turn)
 
     async def make_action(self, websocket):
         """
         Launch best action chooser and call corresponding functions.
         :param websocket: Websocket stream.
         """
+
         action = make_best_action(self)
         if action[0] == "move":
+            print("Sending move request to server")
             await self.make_move(websocket, action[1:])
         if action[0] == "switch":
+            print("Sending switch request to server")
             await self.make_switch(websocket, action[1])

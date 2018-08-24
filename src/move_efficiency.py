@@ -1,4 +1,3 @@
-import json
 from math import floor
 
 from src.pokemon import Status
@@ -25,16 +24,17 @@ def efficiency(elem: str, elems: [str]):
     :return: Integer, efficiency multiplication.
     """
     res = 1
-    with open('data/typechart.json') as data_file:
-        typechart = json.load(data_file)
-        for target_elem in elems:
-            tmp = typechart[target_elem]['damageTaken'][elem]
-            if tmp == 1:
-                res *= 2
-            elif tmp == 2:
-                res *= 0.5
-            elif tmp == 3:
-                res *= 0
+    from src.login import Login
+    login = Login()
+    typechart = login.typechart
+    for target_elem in elems:
+        tmp = typechart[target_elem]['damageTaken'][elem]
+        if tmp == 1:
+            res *= 2
+        elif tmp == 2:
+            res *= 0.5
+        elif tmp == 3:
+            res *= 0
     return res
 
 
@@ -178,7 +178,9 @@ def effi_boost(move, pkm1, pkm2):
             return True
     except KeyError as e:
         print("\033[31m" + str(e) + "\n" + str(tmp) + "\033[0m")
-        exit()
+        from src.login import Login
+        login = Login()
+        login.forfeit_all_matches(e)
     return False
 
 

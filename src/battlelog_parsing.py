@@ -105,6 +105,7 @@ def minor_actions(battle: Battle, split_line):
 
 
 def battlelog_parsing(battle: Battle, split_line):
+    print("Parsing battle log")
     if split_line[0][0] != "-":
         major_actions(battle, split_line)
     else:
