@@ -3,12 +3,12 @@ import json
 import requests
 import asyncio
 
-from src import senders
+from src.io_process import senders
 from src.helpers import Singleton, singleton_object
-from src.battle import Battle
+from src.game_engine.battle import Battle
 
-challenge_mode = 0
-challenge_player = ""
+challenge_mode = 1
+challenge_player = "EnglishMobster"
 
 @singleton_object
 class Login(metaclass=Singleton):
@@ -32,6 +32,15 @@ class Login(metaclass=Singleton):
         self.challenge_mode = challenge_mode
         self.challenge_player = challenge_player
         self.forfeit_exception = None
+        self.allow_new_matches = True
+        self.formats = [
+            "gen7randombattle",
+            "gen7monotyperandombattle",
+            "gen7hackmonscup",
+            "gen7challengecup1v1",
+            "gen6battlefactory",
+            "gen7bssfactory"
+        ]
 
     def load_json(self):
         print("Validating JSON")
@@ -82,9 +91,9 @@ class Login(metaclass=Singleton):
     async def search_for_fights(self):
         # Once we are connected.
         if self.challenge_mode == 1:
-            await senders.challenge(websocket, self.challenge_player, formats[0])
+            await senders.challenge(self.websocket, self.challenge_player, self.formats[0])
         elif self.challenge_mode == 2:
-            await senders.searching(websocket, formats[0])
+            await senders.searching(self.websocket, self.formats[0])
 
     def check_battle(self, battle_id) -> Battle or None:
         """
@@ -99,11 +108,14 @@ class Login(metaclass=Singleton):
         return None
 
     async def create_battle(self, battle_id):
+        if not self.allow_new_matches:
+            return
+
         print("Starting new battle!")
 
         battle = Battle(battle_id)
         self.battles.append(battle)
-        await senders.sendmessage(self.websocket, battle.battle_id, "Hi! I'm a bot! I'm still learning, so be nice!")
+        await senders.sendmessage(self.websocket, battle.battle_id, "Hi! I'm a bot! I'm probably going to crash and forfeit at some point, so be nice!")
         await senders.start_timer(self.websocket, battle.battle_id)
 
     async def game_over(self, battle):
@@ -116,20 +128,16 @@ class Login(metaclass=Singleton):
             await senders.sendmessage(self.websocket, battle.battle_id, "Well played!")
         else:
             await senders.sendmessage(self.websocket, battle.battle_id, "Oops, I crashed! Exception data: " + str(self.forfeit_exception) + ". You win!")
+            import traceback
+            traceback.print_tb(self.forfeit_exception.__traceback__)
         
         await senders.leaving(self.websocket, battle.battle_id)
         self.battles.remove(battle)
-        if self.challenge_mode == 2:
-            with open("log.txt", "r+") as file:
-                line = file.read().split('/')
-                file.seek(0)
-                if username.lower() in current[2].lower():
-                    file.write(str(int(line[0]) + 1) + "/" + line[1] + "/" + str(int(line[2]) + 1))
-                else:
-                    file.write(line[0] + "/" + str(int(line[1]) + 1) + "/" + str(int(line[2]) + 1))
+
 
     def forfeit_all_matches(self, exception=None):
         self.forfeit_exception = exception
+        self.allow_new_matches = False
         asyncio.get_event_loop().create_task(self.__forfeit__())
 
     async def forfeit(self, battle):

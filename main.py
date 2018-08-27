@@ -4,7 +4,7 @@ import asyncio
 import websockets
 import requests
 
-from src.io_process import string_to_action, update_json
+from src.io_process.io_processing import string_to_action, update_json
 
 async def main():
     """
@@ -15,7 +15,7 @@ async def main():
     async with websockets.connect('ws://sim.smogon.com:8000/showdown/websocket') as websocket:
         while True:
             message = await websocket.recv()
-            print("<< {}".format(message))
+            #print("<< {}".format(message))
             await string_to_action(websocket, message)
 
 if __name__ == "__main__":
