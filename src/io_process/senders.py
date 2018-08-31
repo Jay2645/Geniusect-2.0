@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 async def sender(websocket, room, message1, message2=None):
     """
     Default websocket sender. Format message and send websocket.

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import re
 import json
 from json import JSONDecodeError
@@ -6,9 +8,9 @@ from src.ai.ia import make_best_action, make_best_switch, make_best_move, make_b
 from src.game_engine.pokemon import Pokemon, Status
 from src.game_engine.team import Team
 from src.io_process import senders
+from src.game_engine.effects import Entity
 
-
-class Battle:
+class Battle(Entity):
     """
     Battle class.
     Unique for each battle.
@@ -19,12 +21,16 @@ class Battle:
         init Battle method.
         :param battle_id: String, battle_id of battle.
         """
+        super().__init__(None)
+
         self.bot_team = Team()
         self.enemy_team = Team()
         self.current_pkm = None
         self.turn = 0
         self.battle_id = battle_id
         self.player_id = ""
+        self.pseudo_weather = []
+
         print("Battle started")
 
     async def req_loader(self, req, websocket):
@@ -36,15 +42,15 @@ class Battle:
         if req is "":
             return
 
-        print("Beginning new turn")
+        print("Beginning new turn. JSON input: " + req)
 
         try:
             jsonobj = json.loads(req)
         except JSONDecodeError as e:
             print("JSON decode error: " + str(e))
             print("Request: " + req)
-            from src.io_process.login import Login
-            login = Login()
+            from src.io_process.showdown import Showdown
+            login = Showdown()
             login.forfeit_match(self)
             return
 
@@ -244,16 +250,26 @@ class Battle:
 
         for pkm in objteam:
             try:
-                newpkm = Pokemon(self, pkm['details'].split(',')[0], pkm['condition'], pkm['active'],
-                                 pkm['details'].split(',')[1].split('L')[1]
-                                 if len(pkm['details']) > 1 and 'L' in pkm['details'] else 100)
-                newpkm.load_known([pkm['baseAbility']], pkm["item"], pkm['stats'], pkm['moves'])
+                # Load JSON data
+                pkm_name = pkm['details'].split(',')[0]
+                pkm_condition = pkm['condition']
+                pkm_active = pkm['active']
+                pkm_level = pkm['details'].split(',')[1].split('L')[1] if len(pkm['details']) > 1 and 'L' in pkm['details'] else 100
+
+                # Create the Pokemon
+                newpkm = Pokemon(self, pkm_name, pkm_condition, pkm_active, pkm_level)
+
+                pkm_abilities = [pkm['baseAbility']]
+                pkm_item = pkm["item"]
+                pkm_stats = pkm['stats']
+                pkm_moves = pkm['moves']
+                newpkm.load_known(pkm_ability, pkm_item, pkm_stats, pkm_moves)
                 self.bot_team.add(newpkm)
             except IndexError as e:
                 print("\033[31m" + "IndexError: " + str(e))
                 print(pkm + "\033[0m")
-                from src.io_process.login import Login
-                login = Login()
+                from src.io_process.showdown import Showdown
+                login = Showdown()
                 login.forfeit_match(self)
                 return
 
@@ -400,3 +416,91 @@ class Battle:
             await self.make_move(websocket, action[1:])
         if action[0] == "switch":
             await self.make_switch(websocket, action[1])
+
+    def run_event(self, event_id, target = None, source = None, effect = None, relay_var = True, on_effect = None, fast_exit = None):
+        """
+        runEvent is the core of Pokemon Showdown's event system.
+	    Basic usage
+	    ===========
+
+	        run_event('Blah')
+	    will trigger any onBlah global event handlers.
+
+	       run_event('Blah', target)
+	     will additionally trigger any onBlah handlers on the target, onAllyBlah
+	     handlers on any active pokemon on the target's team, and onFoeBlah
+	     handlers on any active pokemon on the target's foe's team
+	
+	       run_event('Blah', target, source)
+	     will additionally trigger any onSourceBlah handlers on the source
+	
+	       run_event('Blah', target, source, effect)
+	     will additionally pass the effect onto all event handlers triggered
+	
+	       run_event('Blah', target, source, effect, relay_var)
+	     will additionally pass the relay_var as the first argument along all event
+	     handlers
+	
+	     You may leave any of these null. For instance, if you have a relay_var but
+	     no source or effect:
+	       run_event('Damage', target, None, None, 50)
+	 
+	     Event handlers
+	     ==============
+	 
+	     Items, abilities, statuses, and other effects like SR, confusion, weather,
+	     or Trick Room can have event handlers. Event handlers are functions that
+	     can modify what happens during an event.
+	 
+	     event handlers are passed:
+	       function (target, source, effect)
+	     although some of these can be blank.
+	 
+	     certain events have a relay variable, in which case they're passed:
+	       function (relay_var, target, source, effect)
+	 
+	     Relay variables are variables that give additional information about the
+	     event. For instance, the damage event has a relay_var which is the amount
+	     of damage dealt.
+	 
+	     If a relay variable isn't passed to runEvent, there will still be a secret
+	     relay_var defaulting to `true`, but it won't get passed to any event
+	     handlers.
+	 
+	     After an event handler is run, its return value helps determine what
+	     happens next:
+	     1. If the return value isn't None, relay_var is set to the return
+	 	    value
+	     2. If relay_var is false, no more event handlers are run
+	     3. Otherwise, if there are more event handlers, the next one is run and
+	 	    we go back to step 1.
+	     4. Once all event handlers are run (or one of them results in a false
+	 	    relay_var), relay_var is returned by runEvent
+	 
+	     As a shortcut, an event handler that isn't a function will be interpreted
+	     as a function that returns that value.
+	 
+	     You can have return values mean whatever you like, but in general, we
+	     follow the convention that returning `False` means
+	     stopping or interrupting the event.
+	 
+	     For instance, returning `false` from a TrySetStatus handler means that
+	     the pokemon doesn't get statused.
+	 	 
+	     Returning `None` means "don't change anything" or "keep going".
+	     A function that does nothing but return `undefined` is the equivalent
+	     of not having an event handler at all.
+	 
+	     Returning a value means that that value is the new `relay_var`. For
+	     instance, if a Damage event handler returns 50, the damage event
+	     will deal 50 damage instead of whatever it was going to deal before.
+        """
+
+    def single_event(self, event_id, effect, effect_data, target, source, source_effect, relay_var = None):
+
+        effect = get_effect(effect)
+
+        has_relay_var = True
+        if relay_var is None:
+            relay_var = True
+            has_relay_var = False

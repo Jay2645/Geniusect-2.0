@@ -1,18 +1,10 @@
+#!/usr/bin/env python3
+
 from enum import Enum
+from math import floor
 
-from src.game_engine.game_calcs import stat_calculation
-
-class Status(Enum):
-    """
-    Status problem enumeration.
-    """
-    UNK = 0
-    PSN = 1
-    TOX = 2
-    PAR = 3
-    BRN = 4
-    SLP = 5
-    FRZ = 6
+from src.game_engine.effects import Entity
+from src.game_engine.game_calcs import Status, stat_calculation, get_effectiveness, get_immunity
 
 
 def pokemon_from_json(pkm_name):
@@ -31,8 +23,8 @@ def pokemon_from_json(pkm_name):
     }
 
     # All data should already be parsed and stored in our Login singleton
-    from src.io_process.login import Login
-    login = Login()
+    from src.io_process.showdown import Showdown
+    login = Showdown()
     pokemon = login.pokemon[pkm_name]
     res["types"] = pokemon["types"]
     res["possibleAbilities"] = list(pokemon["abilities"].values())
@@ -48,7 +40,7 @@ def pokemon_from_json(pkm_name):
     return res
 
 
-class Pokemon:
+class Pokemon(Entity):
     """
     Pokemon class.
     Handle everything corresponding to it.
@@ -60,8 +52,14 @@ class Pokemon:
         :param condition: ### TODO ###
         :param active: Bool.
         """
+        # All data should already be parsed and stored in our Login singleton
+        from src.io_process.showdown import Showdown
+        login = Showdown()
+        pokemon = login.pokemon[name]
+        # Populate basic entity data (name, id, etc.)
+        super().__init__(pokemon)
+
         self.battle = battle
-        self.name = name
         self.current_health = 0
         self.max_health = 0
         self.condition = condition
@@ -112,10 +110,16 @@ class Pokemon:
         self.base_stats = infos["baseStats"]
         self.stats = stats
 
-        from src.io_process.login import Login
-        login = Login()
+        from src.io_process.showdown import Showdown
+        login = Showdown()
         for move in moves:
             self.moves.append(login.moves[move.replace('60', '')])
+
+    def has_type(self, type):
+        return type in self.types
+
+    def has_ability(self, ability_id):
+        return ability_id in self.abilities
 
     def get_stat_value(self, stat):
         """
@@ -127,6 +131,60 @@ class Pokemon:
         except KeyError:
             value = stat_calculation(self.base_stats[stat], self.level, 252) 
         return value
+
+    def calculate_stat(self, stat, boost_amount):
+        stat_value = get_stat_value(stat)
+
+        if stat is 'hp':
+            return stat_value
+
+        # Wonder Room swaps defenses before calculating anything else
+        if 'wonderroom' in battle.pseudo_weather:
+            if stat is 'def':
+                stat_value = get_stat_value('spd')
+            elif stat is 'spd':
+                stat_value = get_stat_value('def')
+
+        # Get boosts
+        boosts = {}
+        boosts[stat] = boost_amount
+        self.battle.run_event('ModifyBoost', self, None, None, boosts)
+        boost_amount = boosts[stat]
+        boost_table = [1, 1.5, 2, 2.5, 3, 3.5, 4]
+        if boost_amount > 6:
+            boost_amount = 6
+        elif boost_amount < -6:
+            boost_amount = -6
+
+        # Multiply the stat value
+        if boost_amount >= 0:
+            stat_value = floor(stat_amount * boost_table[boost_amount])
+        else:
+            stat_value = floor(stat_amount / boost_table[-boost_amount])
+
+        return stat_value
+
+    def run_effectiveness(self, move):
+        total_type_mod = 0
+        for type in self.types:
+            type_mod = get_effectiveness(type, move.type)
+            type_mod = self.battle.single_event('Effectiveness', move, None, type, move, None, type_mod)
+            total_type_mod += self.battle.run_event('Effectiveness', this, type, move, type_mod)
+        return total_type_mod
+
+    def run_immunity(self, move_type):
+        if is_fainted():
+            return False
+        
+        if not get_immunity(move_type, self.types):
+            # We are naturally immune
+            return False
+
+        immunity = self.battle.run_event('Immunity', self, None, None, move_type)
+        if not immunity:
+            # Artificial status immunity (Levitate, etc.)
+            return False
+        return True
 
     def update_health(self, health_string):
         health = health_string.split('/')

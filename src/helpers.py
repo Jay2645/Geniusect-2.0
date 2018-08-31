@@ -1,5 +1,9 @@
-# Taken from https://michaelgoerz.net/notes/singleton-objects-in-python.html
+#!/usr/bin/env python3
 
+
+def string_to_id(name):
+
+# Taken from https://michaelgoerz.net/notes/singleton-objects-in-python.html
 class Singleton(type):
     """Metaclass for singletons. Any instantiation of a Singleton class yields
     the exact same object, e.g.:

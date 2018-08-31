@@ -1,9 +1,9 @@
-import sys
-import json
+#!/usr/bin/env python3
+
 import requests
 import asyncio
 
-from src.io_process import senders
+from src.io_process import senders, json_loader
 from src.helpers import Singleton, singleton_object
 from src.game_engine.battle import Battle
 
@@ -11,9 +11,9 @@ challenge_mode = 1
 challenge_player = "EnglishMobster"
 
 @singleton_object
-class Login(metaclass=Singleton):
+class Showdown(metaclass=Singleton):
     """
-    Login class.
+    Showdown class.
     Handles everything related to logging in to the server.
     Responsible for handling server-wide states (websockets, username)
     """
@@ -41,24 +41,6 @@ class Login(metaclass=Singleton):
             "gen6battlefactory",
             "gen7bssfactory"
         ]
-
-    def load_json(self):
-        print("Validating JSON")
-
-        with open('data/pokedex.json', encoding='utf-8') as pokedex_file:
-            self.pokemon = json.load(pokedex_file)
-        print("Pokedex OK")
-        with open('data/formats-data.json') as formats_file:
-            self.format_moves = json.load(formats_file)
-        print("Battle formats OK")
-        with open("data/moves.json") as moves_file:
-            self.moves = json.load(moves_file)
-        print("Moves OK")
-        with open("data/typechart.json") as typechart_file:
-            self.typechart = json.load(typechart_file)
-        print("Typechart OK")
-        
-        print("All JSON has been loaded!")
 
 
     def update_websocket(self, websocket):

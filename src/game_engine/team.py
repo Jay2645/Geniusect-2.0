@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 class Team:
     """
     Team class.

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from src.game_engine.battle import Battle
 
 

@@ -4,16 +4,16 @@ import os
 import re
 import requests
 
-from src.io_process import senders
+from src.io_process import senders, json_loader
 from src.errors import CantSwitchError, MustSwitchError, BattleCrashedError, NoPokemonError, InvalidMoveError, InvalidTargetError, MegaEvolveError
-from src.io_process.login import Login
+from src.io_process.showdown import Showdown
 from src.io_process.battlelog_parsing import battlelog_parsing
 from src.game_engine.battle import Battle
 
 nb_fights_max = 20
 nb_fights_simu_max = 2
 nb_fights = 0
-login = Login()
+login = Showdown()
 
 async def filter_server_messages(websocket, message):
     """
@@ -82,89 +82,6 @@ async def filter_server_messages(websocket, message):
         except IndexError:
             pass
 
-def determine_showdown_error(error_reason):
-    if "can't switch" in error_reason.lower():
-        raise CantSwitchError(error_reason)
-    elif "battle crashed" in error_reason.lower():
-        raise BattleCrashedError(error_reason)
-    elif "do not have a pokémon in slot" in error_reason.lower():
-        raise NoPokemonError(error_reason)
-    elif "doesn't have a move" in error_reason.lower():
-        raise InvalidMoveError(error_reason)
-    elif "can't z-move more than once" in error_reason.lower():
-        raise InvalidMoveError(error_reason)
-    elif "as a z-move" in error_reason.lower():
-        raise InvalidMoveError(error_reason)
-    elif "needs a target" in error_reason.lower():
-        raise InvalidTargetError(error_reason)
-    elif "invalid target" in error_reason.lower():
-        raise InvalidTargetError(error_reason)
-    elif "can't choose a target" in error_reason.lower():
-        raise InvalidTargetError(error_reason)
-    elif "is disabled" in error_reason.lower():
-        raise InvalidMoveError(error_reason)
-    elif "mega evolve" in error_reason.lower() or "mega-evolve" in error_reason.lower():
-        raise MegaEvolveError(error_reason)
-    elif "ultra burst" in error_reason.lower():
-        raise MegaEvolveError(error_reason)
-    elif "need a switch" in error_reason.lower():
-        raise MustSwitchError(error_reason)
-    else:
-        raise RuntimeError(error_reason)
-
-
-async def update_json():
-    """
-    Update JSON files with the latest from the server
-    """
-
-    print("Grabbing latest JSON files from the Showdown servers")
-
-    os.makedirs("data", exist_ok=True)
-    pattern = re.compile(r'([{,])([a-zA-Z0-9-]+):')
-    js_pattern = re.compile(r'.+= ')
-
-    formats_url = "https://play.pokemonshowdown.com/data/formats-data.js"
-    formats_request = requests.get(formats_url)
-    formats = open("data/formats-data.json", "w+", encoding='utf-8')
-    # These are Javascript files; we need to get everything between the 
-    # equals sign and the first semicolon
-    formats_string = re.sub(js_pattern, "", formats_request.text, 1)[:-1]
-    formats_string = re.sub(pattern, r'\g<1>"\g<2>":', formats_string)
-    # The properties in this string don't have quotes, as this is raw Javascript; let's fix that
-    formats.write(formats_string)
-    formats.close()
-    print("Formats updated")
-
-    moves_url = "https://play.pokemonshowdown.com/data/moves.js"
-    moves_request = requests.get(moves_url)
-    moves_string = re.sub(js_pattern, "", moves_request.text, 1)[:-1]
-    moves_string = re.sub(pattern, r'\g<1>"\g<2>":', moves_string)
-    moves = open("data/moves.json", "w+", encoding='utf-8')
-    moves.write(moves_string)
-    moves.close()
-    print("Move list updated")
-
-    pokedex_url = "https://play.pokemonshowdown.com/data/pokedex.js"
-    pokedex_request = requests.get(pokedex_url)
-    pokedex = open("data/pokedex.json", "w+", encoding='utf-8')
-    pokedex_string = re.sub(js_pattern, "", pokedex_request.text, 1)[:-1]
-    pokedex_string = re.sub(pattern, r'\g<1>"\g<2>":', pokedex_string)
-    pokedex.write(pokedex_string)
-    pokedex.close()
-    print("Pokedex updated")
-
-    typechart_url = "https://play.pokemonshowdown.com/data/typechart.js"
-    typechart_request = requests.get(typechart_url)
-    typechart = open("data/typechart.json", "w+", encoding='utf-8')
-    typechart_string = re.sub(js_pattern, "", typechart_request.text, 1)[:-1]
-    typechart_string = re.sub(pattern, r'\g<1>"\g<2>":', typechart_string)
-    typechart.write(typechart_string)
-    typechart.close()
-    print("Typechart updated")
-
-    login.load_json()
-
 async def string_to_action(websocket, message):
     """
     First filtering function on received messages.
@@ -228,3 +145,33 @@ async def string_to_action(websocket, message):
             await filter_server_messages(websocket, message)
     except Exception as e:
         login.forfeit_all_matches(e)
+
+def determine_showdown_error(error_reason):
+    if "can't switch" in error_reason.lower():
+        raise CantSwitchError(error_reason)
+    elif "battle crashed" in error_reason.lower():
+        raise BattleCrashedError(error_reason)
+    elif "do not have a pokémon in slot" in error_reason.lower():
+        raise NoPokemonError(error_reason)
+    elif "doesn't have a move" in error_reason.lower():
+        raise InvalidMoveError(error_reason)
+    elif "can't z-move more than once" in error_reason.lower():
+        raise InvalidMoveError(error_reason)
+    elif "as a z-move" in error_reason.lower():
+        raise InvalidMoveError(error_reason)
+    elif "needs a target" in error_reason.lower():
+        raise InvalidTargetError(error_reason)
+    elif "invalid target" in error_reason.lower():
+        raise InvalidTargetError(error_reason)
+    elif "can't choose a target" in error_reason.lower():
+        raise InvalidTargetError(error_reason)
+    elif "is disabled" in error_reason.lower():
+        raise InvalidMoveError(error_reason)
+    elif "mega evolve" in error_reason.lower() or "mega-evolve" in error_reason.lower():
+        raise MegaEvolveError(error_reason)
+    elif "ultra burst" in error_reason.lower():
+        raise MegaEvolveError(error_reason)
+    elif "need a switch" in error_reason.lower():
+        raise MustSwitchError(error_reason)
+    else:
+        raise RuntimeError(error_reason)
