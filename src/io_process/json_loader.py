@@ -5,7 +5,13 @@ import sys
 import re
 import requests
 import os
-import datetime
+
+from datetime import datetime
+
+pokemon = {}
+format_moves = {}
+moves = {}
+typechart = {}
 
 def update_json(should_force_update = False):
     """
@@ -18,7 +24,7 @@ def update_json(should_force_update = False):
         # Check to see when the file was last modified
         last_modification_time = datetime.fromtimestamp(os.stat("data/formats-data.json").st_mtime)
         # If we've already modified today, don't bother updating it
-        should_update_json = datetime.today().date() is not last_modification_time.date()
+        should_update_json = datetime.today().date() != last_modification_time.date()
             
     if should_update_json:
         print("Grabbing latest JSON files from the Showdown servers")
@@ -71,6 +77,11 @@ def update_json(should_force_update = False):
 def load_json():
     print("Validating JSON")
 
+    global pokemon
+    global format_moves
+    global moves
+    global typechart
+
     with open('data/pokedex.json', encoding='utf-8') as pokedex_file:
         pokemon = json.load(pokedex_file)
     print("Pokedex OK")
@@ -85,6 +96,34 @@ def load_json():
     print("Typechart OK")
         
     print("All JSON has been loaded!")
+
+
+def pokemon_from_json(pkm_name):
+    """
+    Filtrate, regroup and translate data from json files.
+    :param pkm_name: Pokemon's name
+    :return: Dict. {types, possibleAbilities, baseStats, possibleMoves}
+    """
+
+    pkm_name = pkm_name.lower().replace('-', '').replace(' ', '').replace('%', '').replace('\'', '').replace('.', '')
+    res = {
+        "types": [],
+        "possibleAbilities": [],
+        "baseStats": {},
+        "possibleMoves": []
+    }
+
+    current_pokemon = pokemon[pkm_name]
+    res["types"] = current_pokemon["types"]
+    res["possibleAbilities"] = list(current_pokemon["abilities"].values())
+    res["baseStats"] = current_pokemon["baseStats"]
+    try:
+        pokemon_moves = format_moves[pkm_name]["randomBattleMoves"]
+    except KeyError:
+        raise KeyError("Could not find valid moves for " + pkm_name)
+    for move in pokemon_moves:
+        res["possibleMoves"].append(moves[move])
+    return res
 
 def get_move(move_id):
 

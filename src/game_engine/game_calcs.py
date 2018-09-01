@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from math import floor
+from src.io_process import json_loader
 
 from src.game_engine.natures import battle_natures
 from src.io_process.json_loader import get_move, get_item, get_ability

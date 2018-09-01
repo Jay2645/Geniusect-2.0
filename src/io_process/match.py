@@ -26,8 +26,8 @@ class Match:
         self.tier = ""
 
     def set_player_name(self, player_id, player_name):
-        from src.io_process.login import Login
-        login = Login()
+        from src.io_process.showdown import Showdown
+        login = Showdown()
         is_us = login.username.lower() == player_name.lower()
 
         player_index = player_id_to_index(player_id)

@@ -2,6 +2,7 @@
 
 import requests
 import asyncio
+import sys
 
 from src.io_process import senders, json_loader
 from src.helpers import Singleton, singleton_object
@@ -67,8 +68,8 @@ class Showdown(metaclass=Singleton):
                                 'pass': self.password,
                                 'challstr': challid + "%7C" + chall
                              })
-        await senders.sender(self.websocket, "", "/trn " + self.username + ",0," + json.loads(resp.text[1:])['assertion'])
-        await senders.sender(self.websocket, "", "/avatar 159")
+        await senders.set_nickname(self.websocket, self.username, resp.text[1:])
+        await senders.set_avatar(self.websocket, 159)
 
     async def search_for_fights(self):
         # Once we are connected.

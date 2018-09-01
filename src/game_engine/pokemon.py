@@ -3,44 +3,12 @@
 from enum import Enum
 from math import floor
 
+from src.io_process import json_loader
 from src.game_engine.effects import Entity
 from src.game_engine.game_calcs import Status, stat_calculation, get_effectiveness, get_immunity
 
 
-def pokemon_from_json(pkm_name):
-    """
-    Filtrate, regroup and translate data from json files.
-    :param pkm_name: Pokemon's name
-    :return: Dict. {types, possibleAbilities, baseStats, possibleMoves}
-    """
-
-    pkm_name = pkm_name.lower().replace('-', '').replace(' ', '').replace('%', '').replace('\'', '').replace('.', '')
-    res = {
-        "types": [],
-        "possibleAbilities": [],
-        "baseStats": {},
-        "possibleMoves": []
-    }
-
-    # All data should already be parsed and stored in our Login singleton
-    from src.io_process.showdown import Showdown
-    login = Showdown()
-    pokemon = login.pokemon[pkm_name]
-    res["types"] = pokemon["types"]
-    res["possibleAbilities"] = list(pokemon["abilities"].values())
-    res["baseStats"] = pokemon["baseStats"]
-    try:
-        pokemon_moves = login.format_moves[pkm_name]["randomBattleMoves"]
-    except KeyError:
-        login.forfeit_all_matches(RuntimeError("Could not find valid moves for " + pkm_name))
-        return res
-    moves = login.moves
-    for move in pokemon_moves:
-        res["possibleMoves"].append(moves[move])
-    return res
-
-
-class Pokemon(Entity):
+class Pokemon:
     """
     Pokemon class.
     Handle everything corresponding to it.
@@ -89,7 +57,7 @@ class Pokemon(Entity):
         """
         Load every information of pokemon from datafiles and store them
         """
-        infos = pokemon_from_json(self.name)
+        infos = json_loader.pokemon_from_json(self.name)
         self.types = infos["types"]
         self.abilities = infos["possibleAbilities"]
         self.base_stats = infos["baseStats"]
@@ -103,17 +71,15 @@ class Pokemon(Entity):
         :param stats: Dict. {hp, atk, def, spa, spd, spe}
         :param moves: Array. Not used.
         """
-        infos = pokemon_from_json(self.name)
+        infos = json_loader.pokemon_from_json(self.name)
         self.types = infos["types"]
         self.abilities = abilities
         self.item = item
         self.base_stats = infos["baseStats"]
         self.stats = stats
 
-        from src.io_process.showdown import Showdown
-        login = Showdown()
         for move in moves:
-            self.moves.append(login.moves[move.replace('60', '')])
+            self.moves.append(json_loader.moves[move.replace('60', '')])
 
     def has_type(self, type):
         return type in self.types
