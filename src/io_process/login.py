@@ -5,7 +5,7 @@ import asyncio
 
 from src.io_process import senders
 from src.helpers import Singleton, singleton_object
-from src.game_engine.battle import Battle
+from src.io_process.match import Match
 
 challenge_mode = 1
 challenge_player = "EnglishMobster"
@@ -95,12 +95,11 @@ class Login(metaclass=Singleton):
         elif self.challenge_mode == 2:
             await senders.searching(self.websocket, self.formats[0])
 
-    def check_battle(self, battle_id) -> Battle or None:
+    def check_battle(self, battle_id) -> Match or None:
         """
-        Get Battle corresponding to room_id.
-        :param battle_list: Array of Battles.
+        Get Match corresponding to room_id.
         :param battle_id: String, Tag of Battle.
-        :return: Battle.
+        :return: Match.
         """
         for battle in self.battles:
             if battle.battle_id == battle_id:
@@ -113,7 +112,7 @@ class Login(metaclass=Singleton):
 
         print("Starting new battle!")
 
-        battle = Battle(battle_id)
+        battle = Match(battle_id)
         self.battles.append(battle)
         await senders.sendmessage(self.websocket, battle.battle_id, "Hi! I'm a bot! I'm probably going to crash and forfeit at some point, so be nice!")
         await senders.start_timer(self.websocket, battle.battle_id)
@@ -126,12 +125,12 @@ class Login(metaclass=Singleton):
 
         if self.forfeit_exception is None:
             await senders.sendmessage(self.websocket, battle.battle_id, "Well played!")
+            await senders.leaving(self.websocket, battle.battle_id)
         else:
             await senders.sendmessage(self.websocket, battle.battle_id, "Oops, I crashed! Exception data: " + str(self.forfeit_exception) + ". You win!")
             import traceback
             traceback.print_tb(self.forfeit_exception.__traceback__)
         
-        await senders.leaving(self.websocket, battle.battle_id)
         self.battles.remove(battle)
 
 
@@ -142,8 +141,9 @@ class Login(metaclass=Singleton):
 
     async def forfeit(self, battle):
         print("Forfeiting battle " + battle.battle_id + "!")
-        await senders.forfeit_match(self.websocket, battle.battle_id)
         await self.game_over(battle)
+        await senders.forfeit_match(self.websocket, battle.battle_id)
+        await senders.leaving(self.websocket, battle.battle_id)
 
     async def __forfeit__(self):
         print("Forfeiting the game!")

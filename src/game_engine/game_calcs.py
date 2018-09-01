@@ -76,7 +76,7 @@ def our_ability_modifier(move, pkm1, pkm2):
     mod = 1
     if "Tinted Lens" in pkm1.abilities and efficiency(move["type"], pkm2.types) < 1:
         mod *= 2
-    elif "Guts" in pkm1.abilities and pkm1.status != Status.UNK and move["category"] == "Physical":
+    elif "Guts" in pkm1.abilities and pkm1.status != Status.healthy and move["category"] == "Physical":
         mod *= 1.5
     if "Fluffy" in pkm2.abilities:
         if "contact" in move["flags"].keys():
@@ -158,7 +158,7 @@ def damage_calculation(battle, move, pkm1, pkm2):
 
     # When a Pokemon is burned, its physical attacks do half damage
     from src.game_engine.pokemon import Status
-    if category[0] is "atk" and pkm1.status == Status.BRN and "Guts" not in pkm1.abilities:
+    if category[0] is "atk" and pkm1.status == Status.burned and "Guts" not in pkm1.abilities:
         # Guts is handled by the ability modifier
         burn = 0.5
     else:

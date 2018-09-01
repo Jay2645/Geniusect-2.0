@@ -1,5 +1,13 @@
 # Taken from https://michaelgoerz.net/notes/singleton-objects-in-python.html
 
+def player_id_to_index(player_id):
+    if player_id is 'p1':
+        return 0
+    elif player_id is 'p2':
+        return 1
+    else:
+        return -1
+
 class Singleton(type):
     """Metaclass for singletons. Any instantiation of a Singleton class yields
     the exact same object, e.g.:

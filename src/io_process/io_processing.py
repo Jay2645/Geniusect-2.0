@@ -3,7 +3,10 @@
 import os
 import re
 import requests
+import json
 
+from json import JSONDecodeError
+from datetime import datetime
 from src.io_process import senders
 from src.errors import CantSwitchError, MustSwitchError, BattleCrashedError, NoPokemonError, InvalidMoveError, InvalidTargetError, MegaEvolveError
 from src.io_process.login import Login
@@ -23,7 +26,7 @@ async def filter_server_messages(websocket, message):
     """
     lines = message.splitlines()
     battle_id = lines[0].split("|")[0].split(">")[1]
-    battle = login.check_battle(battle_id)
+    match = login.check_battle(battle_id)
 
     for line in lines[1:]:
         try:
@@ -32,53 +35,32 @@ async def filter_server_messages(websocket, message):
                 # Creation of the battle
                 await login.create_battle(battle_id)
             elif current[1] == "error":
+                # Showdown had an error of some kind
                 determine_showdown_error(current[2])
-            elif current[1] == "player" and len(current) > 3 and current[3].lower() == login.username.lower():
-                # The bot's turn
-                battle.player_id = current[2]
-                battle.turn += int(current[2].split('p')[1]) - 1
+            elif current[1] == "player":
+                # Gives us info about our current player
+                match.set_player_name(current[2], current[3])
+            elif current[1] == "teamsize":
+                match.set_team_size(current[2], current[3])
+            elif current[1] == "gen":
+                match.set_generation(current[2])
+            elif current[1] == "tier":
+                match.set_tier(current[2])
             elif current[1] == "request":
-                # Sent battle JSON
-                if len(current[2]) == 1:
+                if current[2] != "":
                     try:
-                        await battle.req_loader(current[3].split('\n')[1], websocket)
-                    except KeyError as e:
-                        print(e)
-                        print(current[3])
-                else:
-                    await battle.req_loader(current[2], websocket)
-            elif current[1] == "teampreview":
-                # Select the order of the Pokemon
-                await battle.make_team_order(websocket)
+                        request_obj = json.loads(current[2])
+                        await match.send_request(request_obj)
+                    except JSONDecodeError:
+                        print("Could not parse JSON: " + current[2])
+                        print("Full context: " + line)
             elif current[1] == "turn":
-                # Take action (move, switch, etc)
-                await battle.make_action(websocket)
-            elif current[1] == "callback":
-                try:
-                    if current[2] == "trapped":
-                        await battle.make_move(websocket)
-                    elif current[2] == "cant":
-                        if battle.bot_team.active().cant_use_move(current[5]):
-                            await battle.make_action(websocket)
-                        else:
-                            battlelog_parsing(battle, current[1:])
-                except KeyError:
-                        battlelog_parsing(battle, current[1:])
-            elif current[1] == "win":
-                await login.game_over(battle)
-            elif current[1] == "c":
-                # This is a message
-                pass
-            elif current[1] == "inactive":
-                if login.username.lower() in current[2].lower() and "requested by" not in current[2].lower():
-                    # We're not active for some reason! Make a move!
-                    print("We're inactive!")
-                    await battle.make_action(websocket)
-            elif current[1] == "error":
-                determine_showdown_error(current[2])
-            else:
+                await match.new_turn(current[2])
+            elif match is not None:
                 # Send to battlelog parser.
-                battlelog_parsing(battle, current[1:])
+                battlelog_parsing(match.battle, current[1:])
+            else:
+                print("Could not parse message: " + line)
         except IndexError:
             pass
 
@@ -113,55 +95,64 @@ def determine_showdown_error(error_reason):
         raise RuntimeError(error_reason)
 
 
-async def update_json():
+async def update_json(should_force_update = False):
     """
     Update JSON files with the latest from the server
     """
 
-    print("Grabbing latest JSON files from the Showdown servers")
-
+    should_update_json = should_force_update
     os.makedirs("data", exist_ok=True)
-    pattern = re.compile(r'([{,])([a-zA-Z0-9-]+):')
-    js_pattern = re.compile(r'.+= ')
 
-    formats_url = "https://play.pokemonshowdown.com/data/formats-data.js"
-    formats_request = requests.get(formats_url)
-    formats = open("data/formats-data.json", "w+", encoding='utf-8')
-    # These are Javascript files; we need to get everything between the 
-    # equals sign and the first semicolon
-    formats_string = re.sub(js_pattern, "", formats_request.text, 1)[:-1]
-    formats_string = re.sub(pattern, r'\g<1>"\g<2>":', formats_string)
-    # The properties in this string don't have quotes, as this is raw Javascript; let's fix that
-    formats.write(formats_string)
-    formats.close()
-    print("Formats updated")
+    if not should_update_json:
+        # Check to see when the file was last modified
+        last_modification_time = datetime.fromtimestamp(os.stat("data/formats-data.json").st_mtime)
+        # If we've already modified today, don't bother updating it
+        should_update_json = datetime.today().date() != last_modification_time.date()
+        if should_update_json:
+            print("Going to update JSON. Today is " + str(datetime.today().date()) + " and last modification was done " + str(last_modification_time.date()))
 
-    moves_url = "https://play.pokemonshowdown.com/data/moves.js"
-    moves_request = requests.get(moves_url)
-    moves_string = re.sub(js_pattern, "", moves_request.text, 1)[:-1]
-    moves_string = re.sub(pattern, r'\g<1>"\g<2>":', moves_string)
-    moves = open("data/moves.json", "w+", encoding='utf-8')
-    moves.write(moves_string)
-    moves.close()
-    print("Move list updated")
+    if should_update_json:
+        pattern = re.compile(r'([{,])([a-zA-Z0-9-]+):')
+        js_pattern = re.compile(r'.+= ')
 
-    pokedex_url = "https://play.pokemonshowdown.com/data/pokedex.js"
-    pokedex_request = requests.get(pokedex_url)
-    pokedex = open("data/pokedex.json", "w+", encoding='utf-8')
-    pokedex_string = re.sub(js_pattern, "", pokedex_request.text, 1)[:-1]
-    pokedex_string = re.sub(pattern, r'\g<1>"\g<2>":', pokedex_string)
-    pokedex.write(pokedex_string)
-    pokedex.close()
-    print("Pokedex updated")
+        formats_url = "https://play.pokemonshowdown.com/data/formats-data.js"
+        formats_request = requests.get(formats_url)
+        formats = open("data/formats-data.json", "w+", encoding='utf-8')
+        # These are Javascript files; we need to get everything between the 
+        # equals sign and the first semicolon
+        formats_string = re.sub(js_pattern, "", formats_request.text, 1)[:-1]
+        formats_string = re.sub(pattern, r'\g<1>"\g<2>":', formats_string)
+        # The properties in this string don't have quotes, as this is raw Javascript; let's fix that
+        formats.write(formats_string)
+        formats.close()
+        print("Formats updated")
 
-    typechart_url = "https://play.pokemonshowdown.com/data/typechart.js"
-    typechart_request = requests.get(typechart_url)
-    typechart = open("data/typechart.json", "w+", encoding='utf-8')
-    typechart_string = re.sub(js_pattern, "", typechart_request.text, 1)[:-1]
-    typechart_string = re.sub(pattern, r'\g<1>"\g<2>":', typechart_string)
-    typechart.write(typechart_string)
-    typechart.close()
-    print("Typechart updated")
+        moves_url = "https://play.pokemonshowdown.com/data/moves.js"
+        moves_request = requests.get(moves_url)
+        moves_string = re.sub(js_pattern, "", moves_request.text, 1)[:-1]
+        moves_string = re.sub(pattern, r'\g<1>"\g<2>":', moves_string)
+        moves = open("data/moves.json", "w+", encoding='utf-8')
+        moves.write(moves_string)
+        moves.close()
+        print("Move list updated")
+
+        pokedex_url = "https://play.pokemonshowdown.com/data/pokedex.js"
+        pokedex_request = requests.get(pokedex_url)
+        pokedex = open("data/pokedex.json", "w+", encoding='utf-8')
+        pokedex_string = re.sub(js_pattern, "", pokedex_request.text, 1)[:-1]
+        pokedex_string = re.sub(pattern, r'\g<1>"\g<2>":', pokedex_string)
+        pokedex.write(pokedex_string)
+        pokedex.close()
+        print("Pokedex updated")
+
+        typechart_url = "https://play.pokemonshowdown.com/data/typechart.js"
+        typechart_request = requests.get(typechart_url)
+        typechart = open("data/typechart.json", "w+", encoding='utf-8')
+        typechart_string = re.sub(js_pattern, "", typechart_request.text, 1)[:-1]
+        typechart_string = re.sub(pattern, r'\g<1>"\g<2>":', typechart_string)
+        typechart.write(typechart_string)
+        typechart.close()
+        print("Typechart updated")
 
     login.load_json()
 
@@ -181,10 +172,12 @@ async def string_to_action(websocket, message):
     if not login.allow_new_matches:
         exit(2)
 
+    # Handle all meta Showdown stuff related to the bot
+    # Login, searching for fights, responding to PMs, etc.
     try:
         string_tab = message.split('|')
         if string_tab[1] == "challstr":
-            # If we got the challstr, we now can log in.
+            # If we got the challstr, we can log in.
             await login.log_in(string_tab[2], string_tab[3])
         elif string_tab[1] == "updateuser" and string_tab[2] == login.username:
             await login.search_for_fights()

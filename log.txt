@@ -1,1 +1,139 @@
-10/12/22
+﻿
+
+
+Showdown Logs:
+Log: |updateuser|Guest 6377343|0|169
+|formats|,1|US/UM Singles|[Gen 7] Random Battle,f|[Gen 7] Unrated Random Battle,b|[Gen 7] OU,e|[Gen 7] Ubers,e|[Gen 7] UU,e|[Gen 7] RU,e|[Gen 7] NU,e|[Gen 7] PU,e|[Gen 7] LC,e|[Gen 7] Monotype,e|[Gen 7] Anything Goes,e|[Gen 7] CAP,e|[Gen 7] CAP LC,c|[Gen 7] Battle Spot Singles,1e|[Gen 7] Battle Spot Special 11,e|[Gen 7] Custom Game,c|,1|US/UM Doubles|[Gen 7] Random Doubles Battle,f|[Gen 7] Doubles OU,e|[Gen 7] Doubles Ubers,e|[Gen 7] Doubles UU,e|[Gen 7] VGC 2019 Sun Series,1e|[Gen 7] VGC 2019 Moon Series,1c|[Gen 7] VGC 2019 Ultra Series,1e|[Gen 7] VGC 2018,1e|[Gen 7] VGC 2017,1c|[Gen 7] Battle Spot Doubles,1e|[Gen 7] Metronome Battle,e|[Gen 7] Doubles Custom Game,c|,2|OM of the Month|[Gen 7] Tier Shift,e|[Gen 7] Benjamin Butterfree,e|,2|Other Metagames|[Gen 7] Balanced Hackmons,e|[Gen 7] 1v1,e|[Gen 7] Mix and Mega,e|[Gen 7] Almost Any Ability,e|[Gen 7] STABmons,e|[Gen 7] ZU,c|[Gen 7] Camomons,c|[Gen 7] 2v2 Doubles,c|[Gen 6] Gen-NEXT OU,c|,2|Randomized Metas|[Gen 7] Battle Factory,f|[Gen 7] BSS Factory,f|[Gen 7] Monotype Random Battle,d|[Gen 7] Challenge Cup 1v1,f|[Gen 7] Challenge Cup 2v2,d|[Gen 7] Hackmons Cup,f|[Gen 7] Doubles Hackmons Cup,d|[Gen 6] Random Battle,f|[Gen 6] Battle Factory,d|[Gen 5] Random Battle,f|[Gen 4] Random Battle,f|[Gen 3] Random Battle,f|[Gen 2] Random Battle,f|[Gen 1] Random Battle,f|[Gen 1] Challenge Cup,9|,3|RoA Spotlight|[Gen 3] Ubers,e|[Gen 6] Mix and Mega,e|[Gen 2] Mediocremons,e|,3|Past Gens OU|[Gen 6] OU,e|[Gen 5] OU,e|[Gen 4] OU,e|[Gen 3] OU,e|[Gen 2] OU,e|[Gen 1] OU,e|,3|OR/AS Singles|[Gen 6] Ubers,c|[Gen 6] UU,c|[Gen 6] RU,c|[Gen 6] NU,c|[Gen 6] PU,c|[Gen 6] LC,c|[Gen 6] Monotype,c|[Gen 6] Anything Goes,c|[Gen 6] CAP,c|[Gen 6] Battle Spot Singles,1c|[Gen 6] Custom Game,c|,3|OR/AS Doubles/Triples|[Gen 6] Doubles OU,c|[Gen 6] VGC 2016,1c|[Gen 6] Battle Spot Doubles,1c|[Gen 6] Doubles Custom Game,c|[Gen 6] Battle Spot Triples,1c|[Gen 6] Triples Custom Game,c|,4|B2/W2 Singles|[Gen 5] Ubers,c|[Gen 5] UU,c|[Gen 5] RU,c|[Gen 5] NU,c|[Gen 5] LC,c|[Gen 5] GBU Singles,1c|[Gen 5] Custom Game,c|,4|B2/W2 Doubles|[Gen 5] Doubles OU,c|[Gen 5] GBU Doubles,1c|[Gen 5] Doubles Custom Game,c|,4|DPP Singles|[Gen 4] Ubers,c|[Gen 4] UU,c|[Gen 4] NU,c|[Gen 4] LC,c|[Gen 4] Custom Game,c|,4|DPP Doubles|[Gen 4] Doubles OU,c|[Gen 4] Doubles Custom Game,c|,4|Past Generations|[Gen 3] UU,c|[Gen 3] Custom Game,c|[Gen 3] Doubles Custom Game,c|[Gen 2] Ubers,c|[Gen 2] UU,c|[Gen 2] Custom Game,c|[Gen 1] Ubers,c|[Gen 1] OU (tradeback),c|[Gen 1] Stadium,c|[Gen 1] Custom Game,c
+Log: |queryresponse|rooms|null
+Log: |challstr|4|9d5471c0090983540eeadc1d31d17e967d1b0cc27facc65339323bca484c308e7b0acd45ab2343b282e5cf4422863aa14ef4b8d5dc53d040f74446a3cdfff3a54390b39c73fb8692f3fe8757e5e8450b2f2311683c2fb901c4472b9e76e90ac8242ffb38ddc46a13199e95295e265cc87a2899788fe7e89dc6b4c757d9b191d3
+Log: |updatesearch|{"searching":[],"games":null}
+Log: |updateuser|SuchTestBot|1|159
+Log: |updatesearch|{"searching":[],"games":null}
+Log: |updatechallenges|{"challengesFrom":{},"challengeTo":null}
+Log: Avatar changed to:
+|raw|<img src="//play.pokemonshowdown.com/sprites/trainers/159.png" alt="" width="80" height="80" />
+Log: |updatechallenges|{"challengesFrom":{},"challengeTo":{"to":"englishmobster","format":"gen7randombattle"}}
+Log: |updatechallenges|{"challengesFrom":{},"challengeTo":null}
+Log: |updatesearch|{"searching":[],"games":null}
+Log: |updatesearch|{"searching":[],"games":{"battle-gen7randombattle-798993981":"[Gen 7] Random Battle"}}
+Log: >battle-gen7randombattle-798993981
+|init|battle
+|title|SuchTestBot vs. English Mobster
+|j|☆SuchTestBot
+
+Log: >battle-gen7randombattle-798993981
+|request|
+Log: >battle-gen7randombattle-798993981
+
+|j|☆English Mobster
+
+Log: >battle-gen7randombattle-798993981
+
+|player|p1|SuchTestBot|159
+
+Log: >battle-gen7randombattle-798993981
+|request|{"active":[{"moves":[{"move":"Toxic Spikes","id":"toxicspikes","pp":32,"maxpp":32,"target":"foeSide","disabled":false},{"move":"Megahorn","id":"megahorn","pp":16,"maxpp":16,"target":"normal","disabled":false},{"move":"Poison Jab","id":"poisonjab","pp":32,"maxpp":32,"target":"normal","disabled":false},{"move":"Sticky Web","id":"stickyweb","pp":32,"maxpp":32,"target":"foeSide","disabled":false}]}],"side":{"name":"SuchTestBot","id":"p1","pokemon":[{"ident":"p1: Ariados","details":"Ariados, L83, M","condition":"251/251","active":true,"stats":{"atk":197,"def":164,"spa":147,"spd":164,"spe":114},"moves":["toxicspikes","megahorn","poisonjab","stickyweb"],"baseAbility":"insomnia","item":"focussash","pokeball":"pokeball","ability":"insomnia"},{"ident":"p1: Aegislash","details":"Aegislash, L73, F","condition":"208/208","active":false,"stats":{"atk":115,"def":261,"spa":115,"spd":261,"spe":130},"moves":["ironhead","swordsdance","sacredsword","shadowsneak"],"baseAbility":"stancechange","item":"lifeorb","pokeball":"pokeball","ability":"stancechange"},{"ident":"p1: Milotic","details":"Milotic, L79, M","condition":"280/280","active":false,"stats":{"atk":140,"def":170,"spa":204,"spd":243,"spe":174},"moves":["scald","icebeam","dragontail","toxic"],"baseAbility":"competitive","item":"leftovers","pokeball":"pokeball","ability":"competitive"},{"ident":"p1: Toxicroak","details":"Toxicroak, L79, F","condition":"261/261","active":false,"stats":{"atk":213,"def":148,"spa":181,"spd":148,"spe":180},"moves":["drainpunch","swordsdance","substitute","gunkshot"],"baseAbility":"dryskin","item":"blacksludge","pokeball":"pokeball","ability":"dryskin"},{"ident":"p1: Wobbuffet","details":"Wobbuffet, L77, F","condition":"419/419","active":false,"stats":{"atk":55,"def":134,"spa":95,"spd":134,"spe":95},"moves":["counter","destinybond","encore","mirrorcoat"],"baseAbility":"shadowtag","item":"custapberry","pokeball":"pokeball","ability":"shadowtag"},{"ident":"p1: Chesnaught","details":"Chesnaught, L79, F","condition":"269/269","active":false,"stats":{"atk":215,"def":238,"spa":163,"spd":164,"spe":147},"moves":["spikyshield","synthesis","spikes","woodhammer"],"baseAbility":"bulletproof","item":"leftovers","pokeball":"pokeball","ability":"bulletproof"}]},"rqid":2}
+Log: >battle-gen7randombattle-798993981
+
+|player|p2|English Mobster|110
+|teamsize|p1|6
+|teamsize|p2|6
+|gametype|singles
+|gen|7
+|tier|[Gen 7] Random Battle
+|seed|
+|rule|Sleep Clause Mod: Limit one foe put to sleep
+|rule|HP Percentage Mod: HP is shown in percentages
+|
+|start
+|switch|p1a: Ariados|Ariados, L83, M|251/251
+|switch|p2a: Golurk|Golurk, L83|100/100
+|turn|1
+
+Log: >battle-gen7randombattle-798993981
+
+|c|☆SuchTestBot|Hi! I'm a bot! I'm probably going to crash and forfeit at some point, so be nice!
+
+Log: >battle-gen7randombattle-798993981
+|inactive|Time left: 290 sec this turn | 290 sec total
+Log: >battle-gen7randombattle-798993981
+
+|inactive|Battle timer is ON: inactive players will automatically lose when time's up. (requested by SuchTestBot)
+
+Log: >battle-gen7randombattle-798993981
+|request|{"active":[{"moves":[{"move":"Toxic Spikes","id":"toxicspikes","pp":31,"maxpp":32,"target":"foeSide","disabled":false},{"move":"Megahorn","id":"megahorn","pp":16,"maxpp":16,"target":"normal","disabled":false},{"move":"Poison Jab","id":"poisonjab","pp":32,"maxpp":32,"target":"normal","disabled":false},{"move":"Sticky Web","id":"stickyweb","pp":32,"maxpp":32,"target":"foeSide","disabled":false}]}],"side":{"name":"SuchTestBot","id":"p1","pokemon":[{"ident":"p1: Ariados","details":"Ariados, L83, M","condition":"139/251","active":true,"stats":{"atk":197,"def":164,"spa":147,"spd":164,"spe":114},"moves":["toxicspikes","megahorn","poisonjab","stickyweb"],"baseAbility":"insomnia","item":"focussash","pokeball":"pokeball","ability":"insomnia"},{"ident":"p1: Aegislash","details":"Aegislash, L73, F","condition":"208/208","active":false,"stats":{"atk":115,"def":261,"spa":115,"spd":261,"spe":130},"moves":["ironhead","swordsdance","sacredsword","shadowsneak"],"baseAbility":"stancechange","item":"lifeorb","pokeball":"pokeball","ability":"stancechange"},{"ident":"p1: Milotic","details":"Milotic, L79, M","condition":"280/280","active":false,"stats":{"atk":140,"def":170,"spa":204,"spd":243,"spe":174},"moves":["scald","icebeam","dragontail","toxic"],"baseAbility":"competitive","item":"leftovers","pokeball":"pokeball","ability":"competitive"},{"ident":"p1: Toxicroak","details":"Toxicroak, L79, F","condition":"261/261","active":false,"stats":{"atk":213,"def":148,"spa":181,"spd":148,"spe":180},"moves":["drainpunch","swordsdance","substitute","gunkshot"],"baseAbility":"dryskin","item":"blacksludge","pokeball":"pokeball","ability":"dryskin"},{"ident":"p1: Wobbuffet","details":"Wobbuffet, L77, F","condition":"419/419","active":false,"stats":{"atk":55,"def":134,"spa":95,"spd":134,"spe":95},"moves":["counter","destinybond","encore","mirrorcoat"],"baseAbility":"shadowtag","item":"custapberry","pokeball":"pokeball","ability":"shadowtag"},{"ident":"p1: Chesnaught","details":"Chesnaught, L79, F","condition":"269/269","active":false,"stats":{"atk":215,"def":238,"spa":163,"spd":164,"spe":147},"moves":["spikyshield","synthesis","spikes","woodhammer"],"baseAbility":"bulletproof","item":"leftovers","pokeball":"pokeball","ability":"bulletproof"}]},"rqid":4}
+Log: >battle-gen7randombattle-798993981
+
+|
+|move|p2a: Golurk|Shadow Punch|p1a: Ariados
+|-damage|p1a: Ariados|139/251
+|move|p1a: Ariados|Toxic Spikes|p2a: Golurk
+|-sidestart|p2: English Mobster|move: Toxic Spikes
+|
+|upkeep
+|turn|2
+
+Log: >battle-gen7randombattle-798993981
+|inactive|Time left: 300 sec this turn | 300 sec total
+Log: >battle-gen7randombattle-798993981
+|request|{"active":[{"moves":[{"move":"Toxic Spikes","id":"toxicspikes","pp":30,"maxpp":32,"target":"foeSide","disabled":false},{"move":"Megahorn","id":"megahorn","pp":16,"maxpp":16,"target":"normal","disabled":false},{"move":"Poison Jab","id":"poisonjab","pp":32,"maxpp":32,"target":"normal","disabled":false},{"move":"Sticky Web","id":"stickyweb","pp":32,"maxpp":32,"target":"foeSide","disabled":false}]}],"side":{"name":"SuchTestBot","id":"p1","pokemon":[{"ident":"p1: Ariados","details":"Ariados, L83, M","condition":"25/251","active":true,"stats":{"atk":197,"def":164,"spa":147,"spd":164,"spe":114},"moves":["toxicspikes","megahorn","poisonjab","stickyweb"],"baseAbility":"insomnia","item":"focussash","pokeball":"pokeball","ability":"insomnia"},{"ident":"p1: Aegislash","details":"Aegislash, L73, F","condition":"208/208","active":false,"stats":{"atk":115,"def":261,"spa":115,"spd":261,"spe":130},"moves":["ironhead","swordsdance","sacredsword","shadowsneak"],"baseAbility":"stancechange","item":"lifeorb","pokeball":"pokeball","ability":"stancechange"},{"ident":"p1: Milotic","details":"Milotic, L79, M","condition":"280/280","active":false,"stats":{"atk":140,"def":170,"spa":204,"spd":243,"spe":174},"moves":["scald","icebeam","dragontail","toxic"],"baseAbility":"competitive","item":"leftovers","pokeball":"pokeball","ability":"competitive"},{"ident":"p1: Toxicroak","details":"Toxicroak, L79, F","condition":"261/261","active":false,"stats":{"atk":213,"def":148,"spa":181,"spd":148,"spe":180},"moves":["drainpunch","swordsdance","substitute","gunkshot"],"baseAbility":"dryskin","item":"blacksludge","pokeball":"pokeball","ability":"dryskin"},{"ident":"p1: Wobbuffet","details":"Wobbuffet, L77, F","condition":"419/419","active":false,"stats":{"atk":55,"def":134,"spa":95,"spd":134,"spe":95},"moves":["counter","destinybond","encore","mirrorcoat"],"baseAbility":"shadowtag","item":"custapberry","pokeball":"pokeball","ability":"shadowtag"},{"ident":"p1: Chesnaught","details":"Chesnaught, L79, F","condition":"269/269","active":false,"stats":{"atk":215,"def":238,"spa":163,"spd":164,"spe":147},"moves":["spikyshield","synthesis","spikes","woodhammer"],"baseAbility":"bulletproof","item":"leftovers","pokeball":"pokeball","ability":"bulletproof"}]},"rqid":6}
+Log: >battle-gen7randombattle-798993981
+
+|
+|move|p2a: Golurk|Shadow Punch|p1a: Ariados
+|-damage|p1a: Ariados|25/251
+|move|p1a: Ariados|Toxic Spikes|p2a: Golurk
+|-sidestart|p2: English Mobster|move: Toxic Spikes
+|
+|upkeep
+|turn|3
+
+Log: >battle-gen7randombattle-798993981
+|inactive|Time left: 300 sec this turn | 310 sec total
+Log: >battle-gen7randombattle-798993981
+|request|{"forceSwitch":[true],"side":{"name":"SuchTestBot","id":"p1","pokemon":[{"ident":"p1: Ariados","details":"Ariados, L83, M","condition":"0 fnt","active":true,"stats":{"atk":197,"def":164,"spa":147,"spd":164,"spe":114},"moves":["toxicspikes","megahorn","poisonjab","stickyweb"],"baseAbility":"insomnia","item":"focussash","pokeball":"pokeball","ability":"insomnia"},{"ident":"p1: Aegislash","details":"Aegislash, L73, F","condition":"208/208","active":false,"stats":{"atk":115,"def":261,"spa":115,"spd":261,"spe":130},"moves":["ironhead","swordsdance","sacredsword","shadowsneak"],"baseAbility":"stancechange","item":"lifeorb","pokeball":"pokeball","ability":"stancechange"},{"ident":"p1: Milotic","details":"Milotic, L79, M","condition":"280/280","active":false,"stats":{"atk":140,"def":170,"spa":204,"spd":243,"spe":174},"moves":["scald","icebeam","dragontail","toxic"],"baseAbility":"competitive","item":"leftovers","pokeball":"pokeball","ability":"competitive"},{"ident":"p1: Toxicroak","details":"Toxicroak, L79, F","condition":"261/261","active":false,"stats":{"atk":213,"def":148,"spa":181,"spd":148,"spe":180},"moves":["drainpunch","swordsdance","substitute","gunkshot"],"baseAbility":"dryskin","item":"blacksludge","pokeball":"pokeball","ability":"dryskin"},{"ident":"p1: Wobbuffet","details":"Wobbuffet, L77, F","condition":"419/419","active":false,"stats":{"atk":55,"def":134,"spa":95,"spd":134,"spe":95},"moves":["counter","destinybond","encore","mirrorcoat"],"baseAbility":"shadowtag","item":"custapberry","pokeball":"pokeball","ability":"shadowtag"},{"ident":"p1: Chesnaught","details":"Chesnaught, L79, F","condition":"269/269","active":false,"stats":{"atk":215,"def":238,"spa":163,"spd":164,"spe":147},"moves":["spikyshield","synthesis","spikes","woodhammer"],"baseAbility":"bulletproof","item":"leftovers","pokeball":"pokeball","ability":"bulletproof"}]},"noCancel":true,"rqid":8}
+Log: >battle-gen7randombattle-798993981
+
+|
+|move|p2a: Golurk|Shadow Punch|p1a: Ariados
+|-damage|p1a: Ariados|0
+|faint|p1a: Ariados
+|
+|upkeep
+
+Log: >battle-gen7randombattle-798993981
+|inactive|Time left: 300 sec this turn | 320 sec total
+Log: >battle-gen7randombattle-798993981
+|request|{"active":[{"moves":[{"move":"Iron Head","id":"ironhead","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Swords Dance","id":"swordsdance","pp":32,"maxpp":32,"target":"self","disabled":false},{"move":"Sacred Sword","id":"sacredsword","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Shadow Sneak","id":"shadowsneak","pp":48,"maxpp":48,"target":"normal","disabled":false}]}],"side":{"name":"SuchTestBot","id":"p1","pokemon":[{"ident":"p1: Aegislash","details":"Aegislash, L73, F","condition":"208/208","active":true,"stats":{"atk":115,"def":261,"spa":115,"spd":261,"spe":130},"moves":["ironhead","swordsdance","sacredsword","shadowsneak"],"baseAbility":"stancechange","item":"lifeorb","pokeball":"pokeball","ability":"stancechange"},{"ident":"p1: Ariados","details":"Ariados, L83, M","condition":"0 fnt","active":false,"stats":{"atk":197,"def":164,"spa":147,"spd":164,"spe":114},"moves":["toxicspikes","megahorn","poisonjab","stickyweb"],"baseAbility":"insomnia","item":"focussash","pokeball":"pokeball","ability":"insomnia"},{"ident":"p1: Milotic","details":"Milotic, L79, M","condition":"280/280","active":false,"stats":{"atk":140,"def":170,"spa":204,"spd":243,"spe":174},"moves":["scald","icebeam","dragontail","toxic"],"baseAbility":"competitive","item":"leftovers","pokeball":"pokeball","ability":"competitive"},{"ident":"p1: Toxicroak","details":"Toxicroak, L79, F","condition":"261/261","active":false,"stats":{"atk":213,"def":148,"spa":181,"spd":148,"spe":180},"moves":["drainpunch","swordsdance","substitute","gunkshot"],"baseAbility":"dryskin","item":"blacksludge","pokeball":"pokeball","ability":"dryskin"},{"ident":"p1: Wobbuffet","details":"Wobbuffet, L77, F","condition":"419/419","active":false,"stats":{"atk":55,"def":134,"spa":95,"spd":134,"spe":95},"moves":["counter","destinybond","encore","mirrorcoat"],"baseAbility":"shadowtag","item":"custapberry","pokeball":"pokeball","ability":"shadowtag"},{"ident":"p1: Chesnaught","details":"Chesnaught, L79, F","condition":"269/269","active":false,"stats":{"atk":215,"def":238,"spa":163,"spd":164,"spe":147},"moves":["spikyshield","synthesis","spikes","woodhammer"],"baseAbility":"bulletproof","item":"leftovers","pokeball":"pokeball","ability":"bulletproof"}]},"rqid":10}
+Log: >battle-gen7randombattle-798993981
+
+|
+|switch|p1a: Aegislash|Aegislash, L73, F|208/208
+|turn|4
+
+Log: >battle-gen7randombattle-798993981
+|inactive|Time left: 300 sec this turn | 330 sec total
+Log: >battle-gen7randombattle-798993981
+|request|{"forceSwitch":[true],"side":{"name":"SuchTestBot","id":"p1","pokemon":[{"ident":"p1: Aegislash","details":"Aegislash, L73, F","condition":"0 fnt","active":true,"stats":{"atk":115,"def":261,"spa":115,"spd":261,"spe":130},"moves":["ironhead","swordsdance","sacredsword","shadowsneak"],"baseAbility":"stancechange","item":"lifeorb","pokeball":"pokeball","ability":"stancechange"},{"ident":"p1: Ariados","details":"Ariados, L83, M","condition":"0 fnt","active":false,"stats":{"atk":197,"def":164,"spa":147,"spd":164,"spe":114},"moves":["toxicspikes","megahorn","poisonjab","stickyweb"],"baseAbility":"insomnia","item":"focussash","pokeball":"pokeball","ability":"insomnia"},{"ident":"p1: Milotic","details":"Milotic, L79, M","condition":"280/280","active":false,"stats":{"atk":140,"def":170,"spa":204,"spd":243,"spe":174},"moves":["scald","icebeam","dragontail","toxic"],"baseAbility":"competitive","item":"leftovers","pokeball":"pokeball","ability":"competitive"},{"ident":"p1: Toxicroak","details":"Toxicroak, L79, F","condition":"261/261","active":false,"stats":{"atk":213,"def":148,"spa":181,"spd":148,"spe":180},"moves":["drainpunch","swordsdance","substitute","gunkshot"],"baseAbility":"dryskin","item":"blacksludge","pokeball":"pokeball","ability":"dryskin"},{"ident":"p1: Wobbuffet","details":"Wobbuffet, L77, F","condition":"419/419","active":false,"stats":{"atk":55,"def":134,"spa":95,"spd":134,"spe":95},"moves":["counter","destinybond","encore","mirrorcoat"],"baseAbility":"shadowtag","item":"custapberry","pokeball":"pokeball","ability":"shadowtag"},{"ident":"p1: Chesnaught","details":"Chesnaught, L79, F","condition":"269/269","active":false,"stats":{"atk":215,"def":238,"spa":163,"spd":164,"spe":147},"moves":["spikyshield","synthesis","spikes","woodhammer"],"baseAbility":"bulletproof","item":"leftovers","pokeball":"pokeball","ability":"bulletproof"}]},"noCancel":true,"rqid":12}
+Log: >battle-gen7randombattle-798993981
+
+|
+|-formechange|p1a: Aegislash|Aegislash-Blade||[from] ability: Stance Change
+|move|p1a: Aegislash|Shadow Sneak|p2a: Golurk
+|-supereffective|p2a: Golurk
+|-damage|p2a: Golurk|54/100
+|-damage|p1a: Aegislash|188/208|[from] item: Life Orb
+|move|p2a: Golurk|Shadow Punch|p1a: Aegislash
+|-supereffective|p1a: Aegislash
+|-damage|p1a: Aegislash|0
+|faint|p1a: Aegislash
+|
+|upkeep
+
+Log: >battle-gen7randombattle-798993981
+|inactive|Time left: 300 sec this turn | 340 sec total
+Log: >battle-gen7randombattle-798993981
+|error|[Invalid choice] Can't switch: You can't switch to a fainted Pokémon
+Log: >battle-gen7randombattle-798993981
+
+|c|☆SuchTestBot|Oops, I crashed! Exception data: [Invalid choice] Can't switch: You can't switch to a fainted Pokémon. You win!

@@ -6,13 +6,13 @@ class Status(Enum):
     """
     Status problem enumeration.
     """
-    UNK = 0
-    PSN = 1
-    TOX = 2
-    PAR = 3
-    BRN = 4
-    SLP = 5
-    FRZ = 6
+    healthy = 0
+    poisoned = 1
+    toxic = 2
+    paralyzed = 3
+    burned = 4
+    asleep = 5
+    frozen = 6
 
 
 def pokemon_from_json(pkm_name):
@@ -65,7 +65,7 @@ class Pokemon:
         self.current_health = 0
         self.max_health = 0
         self.condition = condition
-        self.status = Status.UNK
+        self.status = Status.healthy
         self.active = active
         self.level = int(level)
         self.types = []

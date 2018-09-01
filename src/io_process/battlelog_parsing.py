@@ -23,6 +23,7 @@ def major_actions(battle: Battle, split_line):
             pkm = split_line[2].split(', ')
             battle.update_enemy(pkm[0], pkm[1][1:] if len(pkm) > 1 and 'L' in pkm[1] else '100', 100)
     else:
+        print("Could not process action:" + str(split_line))
         pass
 
 
@@ -192,11 +193,11 @@ def minor_actions(battle: Battle, split_line):
                 battle.enemy_team.active().substitute = False
         pass
     else:
+        print("Could not process minor action:" + str(split_line))
         pass
 
 
 def battlelog_parsing(battle: Battle, split_line):
-    print(str(split_line))
     if split_line[0][0] != "-":
         major_actions(battle, split_line)
     else:
