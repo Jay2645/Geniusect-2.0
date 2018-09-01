@@ -1,4 +1,5 @@
 from math import floor
+from src.io_process import json_loader
 
 def stat_calculation(base, level, ev):
     """
@@ -21,11 +22,8 @@ def efficiency(elem: str, elems: [str]):
     :return: Float, efficiency multiplication.
     """
     res = 1
-    from src.io_process.login import Login
-    login = Login()
-    typechart = login.typechart
     for target_elem in elems:
-        tmp = typechart[target_elem]['damageTaken'][elem]
+        tmp = json_loader.typechart[target_elem]['damageTaken'][elem]
         if tmp == 1:
             res *= 2
         elif tmp == 2:

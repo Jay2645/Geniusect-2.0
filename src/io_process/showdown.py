@@ -1,9 +1,10 @@
-import sys
-import json
+#!/usr/bin/env python3
+
 import requests
 import asyncio
+import sys
 
-from src.io_process import senders
+from src.io_process import senders, json_loader
 from src.helpers import Singleton, singleton_object
 from src.io_process.match import Match
 
@@ -11,9 +12,9 @@ challenge_mode = 1
 challenge_player = "EnglishMobster"
 
 @singleton_object
-class Login(metaclass=Singleton):
+class Showdown(metaclass=Singleton):
     """
-    Login class.
+    Showdown class.
     Handles everything related to logging in to the server.
     Responsible for handling server-wide states (websockets, username)
     """
@@ -42,24 +43,6 @@ class Login(metaclass=Singleton):
             "gen7bssfactory"
         ]
 
-    def load_json(self):
-        print("Validating JSON")
-
-        with open('data/pokedex.json', encoding='utf-8') as pokedex_file:
-            self.pokemon = json.load(pokedex_file)
-        print("Pokedex OK")
-        with open('data/formats-data.json') as formats_file:
-            self.format_moves = json.load(formats_file)
-        print("Battle formats OK")
-        with open("data/moves.json") as moves_file:
-            self.moves = json.load(moves_file)
-        print("Moves OK")
-        with open("data/typechart.json") as typechart_file:
-            self.typechart = json.load(typechart_file)
-        print("Typechart OK")
-        
-        print("All JSON has been loaded!")
-
 
     def update_websocket(self, websocket):
         """
@@ -85,8 +68,8 @@ class Login(metaclass=Singleton):
                                 'pass': self.password,
                                 'challstr': challid + "%7C" + chall
                              })
-        await senders.sender(self.websocket, "", "/trn " + self.username + ",0," + json.loads(resp.text[1:])['assertion'])
-        await senders.sender(self.websocket, "", "/avatar 159")
+        await senders.set_nickname(self.websocket, self.username, resp.text[1:])
+        await senders.set_avatar(self.websocket, 159)
 
     async def search_for_fights(self):
         # Once we are connected.
@@ -143,7 +126,7 @@ class Login(metaclass=Singleton):
         print("Forfeiting battle " + battle.battle_id + "!")
         await self.game_over(battle)
         await senders.forfeit_match(self.websocket, battle.battle_id)
-        await senders.leaving(self.websocket, battle.battle_id)
+        #await senders.leaving(self.websocket, battle.battle_id)
 
     async def __forfeit__(self):
         print("Forfeiting the game!")

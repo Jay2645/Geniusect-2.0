@@ -4,13 +4,14 @@ import asyncio
 import websockets
 import requests
 
-from src.io_process.io_processing import string_to_action, update_json
+from src.io_process.io_processing import string_to_action
+from src.io_process.json_loader import update_json
 
 async def main():
     """
     Loading function. Connect websocket then launch bot.
     """
-    await update_json()
+    update_json()
 
     with open("log.txt", "a", encoding='utf-8') as log_file:
         log_file.write("\n\n\nShowdown Logs:")

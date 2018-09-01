@@ -1,5 +1,6 @@
 from enum import Enum
 
+from src.io_process import json_loader
 from src.game_engine.game_calcs import stat_calculation
 
 class Status(Enum):
@@ -13,40 +14,6 @@ class Status(Enum):
     burned = 4
     asleep = 5
     frozen = 6
-
-
-def pokemon_from_json(pkm_name):
-    """
-    Filtrate, regroup and translate data from json files.
-    :param pkm_name: Pokemon's name
-    :return: Dict. {types, possibleAbilities, baseStats, possibleMoves}
-    """
-
-    pkm_name = pkm_name.lower().replace('-', '').replace(' ', '').replace('%', '').replace('\'', '').replace('.', '')
-    res = {
-        "types": [],
-        "possibleAbilities": [],
-        "baseStats": {},
-        "possibleMoves": []
-    }
-
-    # All data should already be parsed and stored in our Login singleton
-    from src.io_process.login import Login
-    login = Login()
-    pokemon = login.pokemon[pkm_name]
-    res["types"] = pokemon["types"]
-    res["possibleAbilities"] = list(pokemon["abilities"].values())
-    res["baseStats"] = pokemon["baseStats"]
-    try:
-        pokemon_moves = login.format_moves[pkm_name]["randomBattleMoves"]
-    except KeyError:
-        login.forfeit_all_matches(RuntimeError("Could not find valid moves for " + pkm_name))
-        return res
-    moves = login.moves
-    for move in pokemon_moves:
-        res["possibleMoves"].append(moves[move])
-    return res
-
 
 class Pokemon:
     """
@@ -91,7 +58,7 @@ class Pokemon:
         """
         Load every information of pokemon from datafiles and store them
         """
-        infos = pokemon_from_json(self.name)
+        infos = json_loader.pokemon_from_json(self.name)
         self.types = infos["types"]
         self.abilities = infos["possibleAbilities"]
         self.base_stats = infos["baseStats"]
@@ -105,17 +72,15 @@ class Pokemon:
         :param stats: Dict. {hp, atk, def, spa, spd, spe}
         :param moves: Array. Not used.
         """
-        infos = pokemon_from_json(self.name)
+        infos = json_loader.pokemon_from_json(self.name)
         self.types = infos["types"]
         self.abilities = abilities
         self.item = item
         self.base_stats = infos["baseStats"]
         self.stats = stats
 
-        from src.io_process.login import Login
-        login = Login()
         for move in moves:
-            self.moves.append(login.moves[move.replace('60', '')])
+            self.moves.append(json_loader.moves[move.replace('60', '')])
 
     def get_stat_value(self, stat):
         """

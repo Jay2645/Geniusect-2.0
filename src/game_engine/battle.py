@@ -257,8 +257,8 @@ class Battle:
         print(str(self.bot_team))
 
         if "forceSwitch" in jsonobj.keys():
-            from src.io_process.login import Login
-            login = Login()
+            from src.io_process.showdown import Showdown
+            login = Showdown()
             await self.make_switch(login.websocket)
 
     def update_enemy(self, pkm_name, level, condition):
@@ -326,8 +326,8 @@ class Battle:
 
     async def new_turn(self, turn_number):
         print("Beginning turn " + str(turn_number))
-        from src.io_process.login import Login
-        login = Login()
+        from src.io_process.showdown import Showdown
+        login = Showdown()
         websocket = login.websocket
         await self.make_action(websocket)
 

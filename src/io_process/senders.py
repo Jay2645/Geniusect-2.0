@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+
+from json import loads
 from enum import Flag, auto
 
 class Action(Flag):
@@ -105,3 +108,9 @@ async def forfeit_match(websocket, battle_id):
     :param battle_id: battle_id string.
     """
     await sender(websocket, battle_id, "/forfeit")
+
+async def set_nickname(websocket, username, request_response):
+    await sender(websocket, "", "/trn " + username + ",0," + loads(request_response)['assertion'])
+
+async def set_avatar(websocket, avatar_id):
+    await sender(websocket, "", "/avatar " + str(avatar_id))
