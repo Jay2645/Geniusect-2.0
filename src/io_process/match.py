@@ -77,3 +77,14 @@ class Match:
 
     async def must_make_move(self, websocket):
         await self.battle.make_move(websocket)
+
+    async def game_is_over(self, websocket, winner_name):
+        from src.io_process.showdown import Showdown
+        login = Showdown()
+        if winner_name == login.username:
+            login.wins += 1
+        else:
+            login.losses += 1
+
+        await sendmessage(websocket, self.battle_id, "Well played! So far this session, my win:loss ratio has been: " + str(login.wins) + ":" + str(login.losses) + ".")
+        await login.game_over(self)

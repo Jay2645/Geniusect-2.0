@@ -10,6 +10,7 @@ from src.io_process.match import Match
 
 challenge_mode = 2
 challenge_player = "EnglishMobster"
+avatar = 117
 
 @singleton_object
 class Showdown(metaclass=Singleton):
@@ -42,6 +43,8 @@ class Showdown(metaclass=Singleton):
             "gen6battlefactory",
             "gen7bssfactory"
         ]
+        self.wins = 0
+        self.losses = 0
 
 
     def update_websocket(self, websocket):
@@ -69,7 +72,7 @@ class Showdown(metaclass=Singleton):
                                 'challstr': challid + "%7C" + chall
                              })
         await senders.set_nickname(self.websocket, self.username, resp.text[1:])
-        await senders.set_avatar(self.websocket, 159)
+        await senders.set_avatar(self.websocket, avatar)
 
     async def search_for_fights(self):
         # Once we are connected.
@@ -106,7 +109,6 @@ class Showdown(metaclass=Singleton):
         print("Game is over")
 
         if self.forfeit_exception is None:
-            await senders.sendmessage(self.websocket, battle.battle_id, "Well played!")
             await senders.leaving(self.websocket, battle.battle_id)
         else:
             await senders.sendmessage(self.websocket, battle.battle_id, "Oops, I crashed! Exception data: " + str(self.forfeit_exception) + ". You win!")

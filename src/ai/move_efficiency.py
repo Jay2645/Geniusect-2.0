@@ -1,3 +1,5 @@
+from math import floor
+
 from src.game_engine.pokemon import Status
 from src.game_engine.game_calcs import damage_calculation
 
@@ -186,7 +188,7 @@ def effi_pkm(battle, pkm1, pkm2, is_forced_switch):
     
     pkm2_max_hp = pkm2.get_stat_value("hp")
 
-    pkm2_hp = pkm2_max_hp * pkm2.get_hp_percent()
+    pkm2_hp = floor(pkm2_max_hp * pkm2.get_hp_percent())
 
     # Find the move the attacker will use that does the most damage
     for move in pkm1.moves:
@@ -212,7 +214,7 @@ def effi_pkm(battle, pkm1, pkm2, is_forced_switch):
     pkm2_spe = pkm2.get_stat_value("spe") * pkm2.buff_affect("spe")
 
     pkm1_max_hp = pkm1.get_stat_value("hp")
-    pkm1_hp = pkm1_max_hp * pkm1.get_hp_percent()
+    pkm1_hp = floor(pkm1_max_hp * pkm1.get_hp_percent())
 
     # If we survive and outspeed, find out how much damage we will do
     for move in pkm2.moves:

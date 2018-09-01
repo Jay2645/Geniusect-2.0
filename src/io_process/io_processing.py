@@ -12,8 +12,8 @@ from src.io_process.showdown import Showdown
 from src.io_process.battlelog_parsing import battlelog_parsing
 from src.game_engine.battle import Battle
 
-nb_fights_max = 20
-nb_fights_simu_max = 2
+nb_fights_max = 2
+nb_fights_simu_max = 1
 nb_fights = 0
 login = Showdown()
 
@@ -59,11 +59,11 @@ async def filter_server_messages(websocket, message):
                     await match.must_make_move(websocket)
             elif current[1] == "win":
                 # Someone won the game!
-                await login.game_over(match)
+                await match.game_is_over(websocket, current[2])
             elif current[1] == "inactive" and match is not None:
                 print(current[2])
                 match.set_turn_timer(''.join(c for c in current[2] if c.isdigit()))
-            elif current[1] == "j":
+            elif current[1] == "j" and match is not None:
                 # User joined
                 if login.username.lower() not in current[2].lower():
                     await match.new_player_joined(websocket, current[2])
@@ -79,6 +79,8 @@ async def filter_server_messages(websocket, message):
             else:
                 print("Could not parse message: " + line)
         except IndexError:
+            pass
+        except CantSwitchError:
             pass
 
 async def string_to_action(websocket, message):
