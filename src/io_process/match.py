@@ -1,4 +1,3 @@
-
 from src.io_process.senders import sendmessage
 from src.io_process.json_loader import request_loader
 from src.game_engine.battle import Battle
@@ -27,6 +26,11 @@ class Match:
         self.turn = 0
         self.turn_timer = 0
         self.tier = ""
+
+    def open_window(self):
+        from src.ui.user_interface import open_window
+        open_window(self)
+
 
     def set_player_name(self, player_id, player_name):
         from src.io_process.showdown import Showdown

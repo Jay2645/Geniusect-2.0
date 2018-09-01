@@ -8,7 +8,7 @@ from src.io_process import senders, json_loader
 from src.helpers import Singleton, singleton_object
 from src.io_process.match import Match
 
-challenge_mode = 2
+challenge_mode = 0
 challenge_player = "EnglishMobster"
 avatar = 117
 
@@ -100,6 +100,7 @@ class Showdown(metaclass=Singleton):
 
         battle = Match(battle_id)
         self.battles.append(battle)
+        battle.open_window()
         await senders.start_timer(self.websocket, battle.battle_id)
 
     async def game_over(self, battle):
