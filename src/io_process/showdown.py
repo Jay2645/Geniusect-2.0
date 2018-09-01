@@ -8,8 +8,9 @@ from src.io_process import senders, json_loader
 from src.helpers import Singleton, singleton_object
 from src.io_process.match import Match
 
-challenge_mode = 1
+challenge_mode = 2
 challenge_player = "EnglishMobster"
+avatar = 117
 
 @singleton_object
 class Showdown(metaclass=Singleton):
@@ -42,6 +43,8 @@ class Showdown(metaclass=Singleton):
             "gen6battlefactory",
             "gen7bssfactory"
         ]
+        self.wins = 0
+        self.losses = 0
 
 
     def update_websocket(self, websocket):
@@ -69,7 +72,7 @@ class Showdown(metaclass=Singleton):
                                 'challstr': challid + "%7C" + chall
                              })
         await senders.set_nickname(self.websocket, self.username, resp.text[1:])
-        await senders.set_avatar(self.websocket, 159)
+        await senders.set_avatar(self.websocket, avatar)
 
     async def search_for_fights(self):
         # Once we are connected.
@@ -97,7 +100,6 @@ class Showdown(metaclass=Singleton):
 
         battle = Match(battle_id)
         self.battles.append(battle)
-        await senders.sendmessage(self.websocket, battle.battle_id, "Hi! I'm a bot! I'm probably going to crash and forfeit at some point, so be nice!")
         await senders.start_timer(self.websocket, battle.battle_id)
 
     async def game_over(self, battle):
@@ -107,7 +109,6 @@ class Showdown(metaclass=Singleton):
         print("Game is over")
 
         if self.forfeit_exception is None:
-            await senders.sendmessage(self.websocket, battle.battle_id, "Well played!")
             await senders.leaving(self.websocket, battle.battle_id)
         else:
             await senders.sendmessage(self.websocket, battle.battle_id, "Oops, I crashed! Exception data: " + str(self.forfeit_exception) + ". You win!")
@@ -115,7 +116,7 @@ class Showdown(metaclass=Singleton):
             traceback.print_tb(self.forfeit_exception.__traceback__)
         
         self.battles.remove(battle)
-
+        await senders.leaving(self.websocket, battle.battle_id)
 
     def forfeit_all_matches(self, exception=None):
         self.forfeit_exception = exception
@@ -124,10 +125,9 @@ class Showdown(metaclass=Singleton):
 
     async def forfeit(self, battle):
         print("Forfeiting battle " + battle.battle_id + "!")
-        await self.game_over(battle)
         await senders.forfeit_match(self.websocket, battle.battle_id)
-        await senders.leaving(self.websocket, battle.battle_id)
-
+        await self.game_over(battle)
+        
     async def __forfeit__(self):
         print("Forfeiting the game!")
         for battle in self.battles:

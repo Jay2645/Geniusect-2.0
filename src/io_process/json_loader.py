@@ -97,6 +97,60 @@ def load_json():
         
     print("All JSON has been loaded!")
 
+def request_loader(server_json):
+    """
+    Parse and translate json send by server. Reload bot team. Called each turn.
+    :param req: json sent by server.
+    :param websocket: Websocket stream.
+    """
+    jsonobj = json.loads(server_json)
+    output = {}
+
+    objteam = team_from_json(jsonobj['side'])
+
+    active_pkm = objteam.active()
+    try:
+        active_moves = jsonobj['active']
+    except KeyError:
+        active_moves = None
+
+    # Update our list of moves with metadata about whether they can be used
+    if active_moves is not None and active_pkm is not None:
+        move_data = active_moves[0]['moves']
+        for i in range(len(move_data)):
+            for j in range(len(active_pkm.moves)):
+                if active_pkm.moves[j]['id'] == move_data[i]['id']:
+                    active_pkm.moves[i]['pp'] = move_data[i]['pp']
+                    active_pkm.moves[i]['disabled'] = move_data[i]['disabled']
+
+    output['team'] = objteam
+    output['active'] = active_moves
+    output['turn'] = jsonobj['rqid']
+    try:
+        output['force_switch'] = jsonobj['forceSwitch']
+    except KeyError:
+        output['force_switch'] = False
+
+    return output
+
+        
+def team_from_json(pkm_team):
+    from src.game_engine.team import Team
+    from src.game_engine.pokemon import Pokemon
+
+    bot_team = Team()
+    for pkm in pkm_team["pokemon"]:
+        try:
+            newpkm = Pokemon(pkm['details'].split(',')[0], pkm['condition'], pkm['active'],
+                                pkm['details'].split(',')[1].split('L')[1]
+                                if len(pkm['details']) > 1 and 'L' in pkm['details'] else 100)
+            
+            newpkm.load_known([pkm['baseAbility']], pkm["item"], pkm['stats'], pkm['moves'])
+            bot_team.add(newpkm)
+        except IndexError:
+            pass
+
+    return bot_team
 
 def pokemon_from_json(pkm_name):
     """
@@ -106,6 +160,9 @@ def pokemon_from_json(pkm_name):
     """
 
     pkm_name = pkm_name.lower().replace('-', '').replace(' ', '').replace('%', '').replace('\'', '').replace('.', '')
+    if pkm_name == 'mimikyubusted':
+        pkm_name = 'mimikyu'
+
     res = {
         "types": [],
         "possibleAbilities": [],

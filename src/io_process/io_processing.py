@@ -3,7 +3,6 @@
 import os
 import re
 import requests
-import json
 
 from json import JSONDecodeError
 from datetime import datetime
@@ -13,8 +12,8 @@ from src.io_process.showdown import Showdown
 from src.io_process.battlelog_parsing import battlelog_parsing
 from src.game_engine.battle import Battle
 
-nb_fights_max = 20
-nb_fights_simu_max = 2
+nb_fights_max = 2
+nb_fights_simu_max = 1
 nb_fights = 0
 login = Showdown()
 
@@ -48,20 +47,40 @@ async def filter_server_messages(websocket, message):
                 match.set_tier(current[2])
             elif current[1] == "request":
                 if current[2] != "":
-                    try:
-                        request_obj = json.loads(current[2])
-                        await match.send_request(request_obj)
-                    except JSONDecodeError:
-                        print("Could not parse JSON: " + current[2])
-                        print("Full context: " + line)
+                    await match.recieved_request(current[2])
             elif current[1] == "turn":
                 await match.new_turn(current[2])
+            elif current[1] == "callback":
+                if current[2] == "cant":
+                    print(line)
+                    await match.cant_take_action(current[5])
+                elif current[2] == "trapped":
+                    print(line)
+                    await match.must_make_move(websocket)
+            elif current[1] == "win":
+                # Someone won the game!
+                await match.game_is_over(websocket, current[2])
+            elif current[1] == "inactive" and match is not None:
+                print(current[2])
+                match.set_turn_timer(''.join(c for c in current[2] if c.isdigit()))
+            elif current[1] == "j" and match is not None:
+                # User joined
+                if login.username.lower() not in current[2].lower():
+                    await match.new_player_joined(websocket, current[2])
+            elif current[1] == "l":
+                # User left
+                pass
+            elif current[1] == "c":
+                # User made a comment
+                pass
             elif match is not None:
                 # Send to battlelog parser.
                 battlelog_parsing(match.battle, current[1:])
             else:
                 print("Could not parse message: " + line)
         except IndexError:
+            pass
+        except CantSwitchError:
             pass
 
 async def string_to_action(websocket, message):

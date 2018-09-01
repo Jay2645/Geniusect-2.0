@@ -1,3 +1,5 @@
+from math import floor
+
 from src.game_engine.pokemon import Status
 from src.game_engine.game_calcs import damage_calculation
 
@@ -64,8 +66,8 @@ def effi_status(move, pkm1, pkm2, team):
             return 200
         return 60
     else:
-        for pkm in team.pokemons:  # Sleep clause
-            if pkm.status == Status.slp:
+        for pkm in team.pokemon:  # Sleep clause
+            if pkm.status == Status.asleep:
                 return 0
         if move["id"] in ["spore", "sleeppowder"] and "Grass" in pkm2.types \
                 or "Vital Spirit" in pkm2.abilities \
@@ -75,7 +77,7 @@ def effi_status(move, pkm1, pkm2, team):
 
 def entry_hazard_status(move, enemy_team):
     valid_pokemon = 5
-    for pokemon in enemy_team.pokemons:
+    for pokemon in enemy_team.pokemon:
         if pokemon == enemy_team.active() or pokemon.condition == "0 fnt":
             valid_pokemon -= 1
     if valid_pokemon <= 0:
@@ -96,7 +98,7 @@ def entry_hazard_status(move, enemy_team):
 
 def entry_hazard_removal_status(move, team):
     valid_pokemon = 0
-    for pokemon in team.pokemons:
+    for pokemon in team.pokemon:
         if pokemon != team.active() and pokemon.condition != "0 fnt":
             valid_pokemon += 1
     if valid_pokemon == 0:
@@ -169,7 +171,7 @@ def effi_move(battle, move, pkm1, pkm2, team):
     return modified_weight
 
 
-def effi_pkm(battle, pkm1, pkm2):
+def effi_pkm(battle, pkm1, pkm2, is_forced_switch):
     """
     Efficiency of pokemon against other.
     Based on move efficiency functions.
@@ -184,7 +186,9 @@ def effi_pkm(battle, pkm1, pkm2):
     effi1 = 0
     pkm1_move_name = ""
     
-    pkm2_hp = pkm2.get_stat_value("hp") * pkm2.get_hp_percent()
+    pkm2_max_hp = pkm2.get_stat_value("hp")
+
+    pkm2_hp = floor(pkm2_max_hp * pkm2.get_hp_percent())
 
     # Find the move the attacker will use that does the most damage
     for move in pkm1.moves:
@@ -193,11 +197,14 @@ def effi_pkm(battle, pkm1, pkm2):
             pkm1_move_name = move["name"]
             effi1 = dmg
 
-    # Subtract the best possible move from the defender's current HP
-    pkm2_hp -= effi1
-    if pkm2_hp <= 0:
-        print(pkm2.name + " will be killed in a switch by " + pkm1.name + " using " + pkm1_move_name)
-        return 0
+
+    if not is_forced_switch:
+        # Subtract the best possible move from the defender's current HP
+        # This is the damage we'd take on the turn we switch in
+        pkm2_hp -= effi1
+        if pkm2_hp <= 0:
+            print(pkm2.name + " will be killed in a switch by " + pkm1.name + " using " + pkm1_move_name)
+            return 0
 
     # @TODO: Move this to its own function
     effi2 = 0
@@ -205,29 +212,42 @@ def effi_pkm(battle, pkm1, pkm2):
 
     pkm1_spe = pkm1.get_stat_value("spe") * pkm1.buff_affect("spe")
     pkm2_spe = pkm2.get_stat_value("spe") * pkm2.buff_affect("spe")
-    pkm1_hp = pkm2.get_stat_value("hp") * pkm1.get_hp_percent()
+
+    pkm1_max_hp = pkm1.get_stat_value("hp")
+    pkm1_hp = floor(pkm1_max_hp * pkm1.get_hp_percent())
 
     # If we survive and outspeed, find out how much damage we will do
-    if pkm2_spe > pkm1_spe:
-        for move in pkm2.moves:
-            dmg = effi_move(battle, move, pkm2, pkm1, pkm2.team)
-            if effi2 < dmg:
-                effi2 = dmg
-                pkm2_move_name = move["name"]
+    for move in pkm2.moves:
+        dmg = effi_move(battle, move, pkm2, pkm1, pkm2.team)
+        if effi2 < dmg:
+            effi2 = dmg
+            pkm2_move_name = move["name"]
 
     # Subtract our attack from the attacker's HP
     pkm1_hp -= effi2
-    if pkm1_hp <= 0:
+    if pkm1_hp <= 0 and pkm1_spe > pkm2_spe:
         # We killed them!
         print(pkm2.name + " will survive a switch and then outspeed and kill " + pkm1.name + " using " + pkm2_move_name)
         return effi2
+    else:
+        # We won't outspeed, so we'll take damage first
+        pkm2_hp -= effi1
+        if pkm2_hp <= 0:
+            # The move will kill us, so we can't attack at all
+            # Give them their missing HP back
+            # (This will in turn give this Pokemon a lower score)
+            pkm1_hp += effi2
 
     # Get HP percentage values in range 0 - 100
     pkm1_hp_percent = (pkm1_hp / pkm1.get_stat_value("hp")) * 100
     pkm2_hp_percent = (pkm2_hp / pkm2.get_stat_value("hp")) * 100
 
-    print("After a switch, " + pkm1.name + " (attacker) will use move " + pkm1_move_name + " with " + str(pkm1_hp_percent) + "% HP")
-    print(pkm2.name + " (defender) will use move " + pkm2_move_name + " and have " + str(pkm2_hp_percent) + "% HP")
+    speed_status = "will outspeed" if pkm1_spe > pkm2_spe else "will survive a hit"
+
+    print("After a switch, " + pkm1.name + " (attacker) " + speed_status + " and use move " + pkm1_move_name + " with " + str(pkm1_hp_percent) + "% HP (" + str(pkm1_hp) + "/" + str(pkm1_max_hp) + ")")
+    print(pkm2.name + " (defender) will use move " + pkm2_move_name + " and have " + str(pkm2_hp_percent) + "% HP (" + str(pkm2_hp) + "/" + str(pkm2_max_hp) + ")")
 
     # Return the difference between how much damage we do and how much damage they do
-    return pkm2_hp_percent - pkm1_hp_percent
+    delta = pkm2_hp_percent - pkm1_hp_percent
+
+    return delta

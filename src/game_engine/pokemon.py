@@ -13,21 +13,14 @@ class Pokemon:
     Pokemon class.
     Handle everything corresponding to it.
     """
-    def __init__(self, battle, name, condition, active, level):
+    def __init__(self, name, condition, active, level):
         """
         Init Pokemon method.
         :param name: name of Pokemon.
         :param condition: ### TODO ###
         :param active: Bool.
         """
-        # All data should already be parsed and stored in our Login singleton
-        from src.io_process.showdown import Showdown
-        login = Showdown()
-        pokemon = login.pokemon[name]
-        # Populate basic entity data (name, id, etc.)
-        super().__init__(pokemon)
-
-        self.battle = battle
+        self.name = name
         self.current_health = 0
         self.max_health = 0
         self.condition = condition
@@ -168,7 +161,7 @@ class Pokemon:
                 self.max_health = 100
 
     def is_fainted(self):
-        return self.condition is "0 fnt"
+        return self.condition == "0 fnt"
 
     def get_hp_percent(self):
         if self.max_health is 0:
@@ -209,9 +202,6 @@ class Pokemon:
         if self.item is not "" and self.item is not None:
             output += " @ " + str(self.item)
         output += "\nAbilities: " + str(self.abilities)
-        output += "\nStats:"
-        for stat in self.base_stats:
-            print("\n - " + stat + ": " + str(self.get_stat_value(stat)))
         output += "\nMoves:"
         for move in self.moves:
             try:
@@ -223,7 +213,4 @@ class Pokemon:
                     output += "\n - Move Enabled"
             except KeyError:
                 pass
-        output += "\nBuffs:"
-        for stat in self.buff:
-            output += "\n * " + stat + ": " + str(self.buff[stat])
         return output
