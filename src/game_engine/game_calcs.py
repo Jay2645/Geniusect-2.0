@@ -72,6 +72,7 @@ def item_modifier(move, pkm1, pkm2):
 
 def our_ability_modifier(move, pkm1, pkm2):
     mod = 1
+    from src.game_engine.pokemon import Status
     if "Tinted Lens" in pkm1.abilities and efficiency(move["type"], pkm2.types) < 1:
         mod *= 2
     elif "Guts" in pkm1.abilities and pkm1.status != Status.healthy and move["category"] == "Physical":

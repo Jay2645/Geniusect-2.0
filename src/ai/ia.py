@@ -6,14 +6,14 @@ def make_best_order(battle, form=None):
     Parse battle.bot_team to find the best pokemon based on his damages against enemy team.
     :param battle: Battle object, current battle.
     :param form: Battle format.
-    :return: List of pokemons in bot_team sorted by efficiency ([[1, 6], [-oo, +oo]]).
+    :return: List of pokemon in bot_team sorted by efficiency ([[1, 6], [-oo, +oo]]).
     """
     team = battle.bot_team
     enemy_team = battle.enemy_team
     ordered_team = []
-    for i, pokemon in enumerate(team.pokemons):
+    for i, pokemon in enumerate(team.pokemon):
         average_efficiency = 0
-        for enemy_pkm in enemy_team.pokemons:
+        for enemy_pkm in enemy_team.pokemon:
             pkm_efficiency = -1024
             if form == 'gen7challengecup1v1':
                 for move in pokemon.moves:
@@ -29,7 +29,7 @@ def make_best_order(battle, form=None):
     return ordered_team
 
 
-def make_best_switch(battle):
+def make_best_switch(battle, force_switch):
     """
     Parse battle.bot_team to find the best pokemon based on his efficiency against current enemy pokemon.
     :param battle: Battle object, current battle.
@@ -40,7 +40,7 @@ def make_best_switch(battle):
     enemy_pkm = battle.enemy_team.active()
     best_pkm = None
     effi = -1024
-    for pokemon in team.pokemons:
+    for pokemon in team.pokemon:
         if pokemon is team.active():
             print("Not switching to " + pokemon.name + " as it is already active")
             continue
@@ -49,7 +49,7 @@ def make_best_switch(battle):
             continue
 
         # Entry hazards
-        our_effi = effi_pkm(battle, enemy_pkm, pokemon)
+        our_effi = effi_pkm(battle, enemy_pkm, pokemon, force_switch)
         print("Raw efficency: " + str(our_effi))
         if team.entry_hazards["stealth_rock"] == 1:
             effi_mod = type_damage_calculation("Rock", pokemon) * 4 # Multiply by 4 so a 4x resist becomes 1
@@ -75,13 +75,9 @@ def make_best_switch(battle):
         if our_effi > effi:
             best_pkm = pokemon
             effi = our_effi
-    if effi < 0:
-        print("We have no good Pokemon to switch to.")
-        return -1, -1024
-    else:
-        print("Our best switch right now is a switch to " + pokemon.name +", with a weight of " + str(effi))
+    print("Our best switch right now is a switch to " + pokemon.name +", with a weight of " + str(effi))
     try:
-        return team.pokemons.index(best_pkm) + 1, effi
+        return team.pokemon.index(best_pkm) + 1, effi
     except ValueError:
         return -1, -1024
 
@@ -144,7 +140,7 @@ def make_best_action(battle):
 
     # If we don't have a substitute active, look at our options for switching
     if not bot_pkm.substitute:
-        best_switch = make_best_switch(battle)    
+        best_switch = make_best_switch(battle, False)    
         if battle.current_pkm is None or best_move[0] is None or best_move[1] < best_switch[1]:
             return "switch", best_switch[0]
     return ["move"] + [i for i in best_move]

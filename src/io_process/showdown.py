@@ -8,7 +8,7 @@ from src.io_process import senders, json_loader
 from src.helpers import Singleton, singleton_object
 from src.io_process.match import Match
 
-challenge_mode = 1
+challenge_mode = 2
 challenge_player = "EnglishMobster"
 
 @singleton_object
@@ -97,7 +97,6 @@ class Showdown(metaclass=Singleton):
 
         battle = Match(battle_id)
         self.battles.append(battle)
-        await senders.sendmessage(self.websocket, battle.battle_id, "Hi! I'm a bot! I'm probably going to crash and forfeit at some point, so be nice!")
         await senders.start_timer(self.websocket, battle.battle_id)
 
     async def game_over(self, battle):
@@ -115,7 +114,7 @@ class Showdown(metaclass=Singleton):
             traceback.print_tb(self.forfeit_exception.__traceback__)
         
         self.battles.remove(battle)
-
+        await senders.leaving(self.websocket, battle.battle_id)
 
     def forfeit_all_matches(self, exception=None):
         self.forfeit_exception = exception
@@ -124,10 +123,9 @@ class Showdown(metaclass=Singleton):
 
     async def forfeit(self, battle):
         print("Forfeiting battle " + battle.battle_id + "!")
-        await self.game_over(battle)
         await senders.forfeit_match(self.websocket, battle.battle_id)
-        #await senders.leaving(self.websocket, battle.battle_id)
-
+        await self.game_over(battle)
+        
     async def __forfeit__(self):
         print("Forfeiting the game!")
         for battle in self.battles:

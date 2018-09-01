@@ -3,7 +3,6 @@
 import os
 import re
 import requests
-import json
 
 from json import JSONDecodeError
 from datetime import datetime
@@ -48,14 +47,32 @@ async def filter_server_messages(websocket, message):
                 match.set_tier(current[2])
             elif current[1] == "request":
                 if current[2] != "":
-                    try:
-                        request_obj = json.loads(current[2])
-                        await match.send_request(request_obj)
-                    except JSONDecodeError:
-                        print("Could not parse JSON: " + current[2])
-                        print("Full context: " + line)
+                    await match.recieved_request(current[2])
             elif current[1] == "turn":
                 await match.new_turn(current[2])
+            elif current[1] == "callback":
+                if current[2] == "cant":
+                    print(line)
+                    await match.cant_take_action(current[5])
+                elif current[2] == "trapped":
+                    print(line)
+                    await match.must_make_move(websocket)
+            elif current[1] == "win":
+                # Someone won the game!
+                await login.game_over(match)
+            elif current[1] == "inactive" and match is not None:
+                print(current[2])
+                match.set_turn_timer(''.join(c for c in current[2] if c.isdigit()))
+            elif current[1] == "j":
+                # User joined
+                if login.username.lower() not in current[2].lower():
+                    await match.new_player_joined(websocket, current[2])
+            elif current[1] == "l":
+                # User left
+                pass
+            elif current[1] == "c":
+                # User made a comment
+                pass
             elif match is not None:
                 # Send to battlelog parser.
                 battlelog_parsing(match.battle, current[1:])
