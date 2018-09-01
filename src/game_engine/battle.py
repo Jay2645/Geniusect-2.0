@@ -33,26 +33,14 @@ class Battle(Entity):
 
         print("Battle started")
 
-    async def req_loader(self, req, websocket):
+    async def req_loader(self, jsonobj):
         """
         Parse and translate json send by server. Reload bot team. Called each turn.
         :param req: json sent by server.
         :param websocket: Websocket stream.
         """
-        if req is "":
-            return
 
-        print("Beginning new turn. JSON input: " + req)
-
-        try:
-            jsonobj = json.loads(req)
-        except JSONDecodeError as e:
-            print("JSON decode error: " + str(e))
-            print("Request: " + req)
-            from src.io_process.showdown import Showdown
-            login = Showdown()
-            login.forfeit_match(self)
-            return
+        print("Updating Pokemon teams.")
 
         # Example JSON Object:
         # {
@@ -287,7 +275,9 @@ class Battle(Entity):
         print(str(self.bot_team))
 
         if "forceSwitch" in jsonobj.keys():
-            await self.make_switch(websocket)
+            from src.io_process.login import Login
+            login = Login()
+            await self.make_switch(login.websocket)
 
     def update_enemy(self, pkm_name, level, condition):
         """
@@ -328,6 +318,10 @@ class Battle(Entity):
         print("Enemy team:")
         print(str(self.enemy_team))
 
+    def update_player(self, player_data, player_index):
+        if player_data['is_bot']:
+            self.player_id = player_data['showdown_id']
+
     @staticmethod
     def update_status(pokemon, status: str = ""):
         """
@@ -336,17 +330,24 @@ class Battle(Entity):
         :param status: String.
         """
         if status == "tox":
-            pokemon.status = Status.TOX
+            pokemon.status = Status.toxic
         elif status == "brn":
-            pokemon.status = Status.BRN
+            pokemon.status = Status.burned
         elif status == "par":
-            pokemon.status = Status.PAR
-        elif status == "tox":
-            pokemon.status = Status.TOX
+            pokemon.status = Status.paralyzed
+        elif status == "psn":
+            pokemon.status = Status.poisoned
         elif status == "slp":
-            pokemon.status = Status.SLP
+            pokemon.status = Status.asleep
         else:
-            pokemon.status = Status.UNK
+            pokemon.status = Status.healthy
+
+    async def new_turn(self, turn_number):
+        print("Beginning turn " + str(turn_number))
+        from src.io_process.login import Login
+        login = Login()
+        websocket = login.websocket
+        await self.make_action(websocket)
 
     @staticmethod
     def set_buff(pokemon, stat, quantity):

@@ -65,7 +65,7 @@ def effi_status(move, pkm1, pkm2, team):
         return 60
     else:
         for pkm in team.pokemons:  # Sleep clause
-            if pkm.status == Status.SLP:
+            if pkm.status == Status.slp:
                 return 0
         if move["id"] in ["spore", "sleeppowder"] and "Grass" in pkm2.types \
                 or "Vital Spirit" in pkm2.abilities \
@@ -159,7 +159,7 @@ def effi_move(battle, move, pkm1, pkm2, team):
         if move["id"] is "rapidspin":
             # Rapid Spin doesn't affect Ghost Types
             weight *= damage_calculation(battle, move, pkm1, pkm2)
-    elif move["id"] in non_volatile_status_moves and pkm2.status == Status.UNK:
+    elif move["id"] in non_volatile_status_moves and pkm2.status == Status.healthy:
         weight = effi_status(move, pkm1, pkm2, team)
     else:
         weight = damage_calculation(battle, move, pkm1, pkm2)

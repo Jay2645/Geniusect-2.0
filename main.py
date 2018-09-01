@@ -18,7 +18,7 @@ async def main():
             while True:
                 message = await websocket.recv()
                 #print("<< {}".format(message))
-                log_file.write(message)
+                log_file.write("\nLog: " + message)
                 await string_to_action(websocket, message)
 
 if __name__ == "__main__":

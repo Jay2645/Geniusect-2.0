@@ -1,5 +1,26 @@
 #!/usr/bin/env python3
 
+from enum import Flag, auto
+
+class Action(Flag):
+    """
+    A list of actions we can take.
+    Actions can be combined -- you can combine use_move_1 and mega_evolve by
+    doing use_move_1 & mega_evolve.
+    """
+    use_move_1 = auto()
+    use_move_2 = auto()
+    use_move_3 = auto()
+    use_move_4 = auto()
+    switch_pokemon_1 = auto()
+    switch_pokemon_2 = auto()
+    switch_pokemon_3 = auto()
+    switch_pokemon_4 = auto()
+    switch_pokemon_5 = auto()
+    switch_pokemon_6 = auto()
+    mega_evolve = auto()
+    z_move = auto()
+
 async def sender(websocket, room, message1, message2=None):
     """
     Default websocket sender. Format message and send websocket.
@@ -12,6 +33,9 @@ async def sender(websocket, room, message1, message2=None):
         string = room + '|' + message1 + '|' + message2
     else:
         string = room + '|' + message1
+
+    with open("outlog.txt", "a", encoding='utf-8') as log_file:
+        log_file.write("\n" + string)
     await websocket.send(string)
 
 async def searching(websocket, form):

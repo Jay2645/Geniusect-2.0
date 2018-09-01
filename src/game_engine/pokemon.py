@@ -63,7 +63,7 @@ class Pokemon(Entity):
         self.current_health = 0
         self.max_health = 0
         self.condition = condition
-        self.status = Status.UNK
+        self.status = Status.healthy
         self.active = active
         self.level = int(level)
         self.types = []

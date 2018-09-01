@@ -9,13 +9,13 @@ class Status(Enum):
     """
     Status problem enumeration.
     """
-    UNK = 0
-    PSN = 1
-    TOX = 2
-    PAR = 3
-    BRN = 4
-    SLP = 5
-    FRZ = 6
+    healthy = 0
+    poisoned = 1
+    toxic = 2
+    paralyzed = 3
+    burned = 4
+    asleep = 5
+    frozen = 6
 
 def get_typechart():
     from src.io_processs.login import Showdown

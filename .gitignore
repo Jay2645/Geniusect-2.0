@@ -97,3 +97,4 @@ ENV/
 data/
 src/id.txt
 log.txt
+outlog.txt
