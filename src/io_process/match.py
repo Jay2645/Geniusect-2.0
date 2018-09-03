@@ -1,4 +1,3 @@
-
 from src.io_process.senders import sendmessage
 from src.io_process.json_loader import request_loader
 from src.game_engine.battle import Battle

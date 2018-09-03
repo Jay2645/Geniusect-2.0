@@ -197,6 +197,5 @@ ENV/
 # Data fetched at runtime
 data/
 src/id.txt
-log.txt
-outlog.txt
->>>>>>> master
+
+*.txt
