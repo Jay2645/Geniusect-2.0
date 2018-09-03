@@ -1,15 +1,21 @@
 import asyncio
+import tkinter
+import threading
 
-from tkinter import Tk, TclError
+from src.io_process.showdown import create_websocket
 
-async def run_tk(root, interval=0.05):
-    '''
-    Run a tkinter app in an asyncio event loop.
-    '''
-    try:
-        while True:
-            root.update()
-            await asyncio.sleep(interval)
-    except TclError as e:
-        if "application has been destroyed" not in e.args[0]:
-            raise
+def _asyncio_thread(async_loop):
+    async_loop.run_until_complete(create_websocket())
+    
+def do_tasks(async_loop):
+    """ Button-Event-Handler starting the asyncio part. """
+    threading.Thread(target=_asyncio_thread, args=(async_loop,)).start()
+
+def run_tk(async_loop):
+    root = tkinter.Tk()
+    entry = tkinter.Entry(root)
+    entry.grid()
+
+    tkinter.Button(root, text='Start Showdown', command=lambda:do_tasks(async_loop)).grid()
+    
+    root.mainloop()

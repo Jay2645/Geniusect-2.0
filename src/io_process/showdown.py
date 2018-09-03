@@ -2,15 +2,32 @@
 
 import requests
 import asyncio
+import websockets
 import sys
 
 from src.io_process import senders, json_loader
 from src.helpers import Singleton, singleton_object
 from src.io_process.match import Match
 
-challenge_mode = 0
+challenge_mode = 1
 challenge_player = "EnglishMobster"
 avatar = 117
+
+def shutdown_showdown():
+    showdown = Showdown()
+    showdown.forfeit_all_matches()
+
+async def create_websocket():
+    global should_shutdown
+
+    from src.io_process.io_processing import string_to_action
+    with open("log.txt", "a", encoding='utf-8') as log_file:
+        log_file.write("\n\n\nShowdown Logs:")
+        async with websockets.connect('ws://sim.smogon.com:8000/showdown/websocket') as websocket:
+            while True:
+                message = await websocket.recv()
+                log_file.write("\nLog: " + message)
+                await string_to_action(websocket, message)
 
 @singleton_object
 class Showdown(metaclass=Singleton):
@@ -100,7 +117,6 @@ class Showdown(metaclass=Singleton):
 
         battle = Match(battle_id)
         self.battles.append(battle)
-        battle.open_window()
         await senders.start_timer(self.websocket, battle.battle_id)
 
     async def game_over(self, battle):
