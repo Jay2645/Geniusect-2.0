@@ -5,7 +5,7 @@ import asyncio
 from contextlib import suppress
 
 from src.io_process.json_loader import update_json
-from src.ui.user_interface import run_tk
+from src.ui.user_interface import UserInterface
 from src.io_process.showdown import shutdown_showdown
 
 def main(async_loop):
@@ -14,7 +14,9 @@ def main(async_loop):
     """
     update_json()
 
-    run_tk(async_loop)
+    ui = UserInterface(async_loop)
+    ui.run_tk()
+
     shutdown_showdown()
 
 if __name__ == "__main__":
