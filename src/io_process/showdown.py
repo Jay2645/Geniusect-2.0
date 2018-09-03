@@ -5,9 +5,10 @@ import asyncio
 import websockets
 import sys
 
-from src.io_process import senders, json_loader
 from src.helpers import Singleton, singleton_object
+from src.io_process import senders, json_loader
 from src.io_process.match import Match
+from src.ui.user_interface import UserInterface
 
 challenge_mode = 1
 challenge_player = "EnglishMobster"
@@ -88,6 +89,9 @@ class Showdown(metaclass=Singleton):
                                 'pass': self.password,
                                 'challstr': challid + "%7C" + chall
                              })
+        ui = UserInterface()
+        ui.on_logged_in(self.username)
+
         await senders.set_nickname(self.websocket, self.username, resp.text[1:])
         await senders.set_avatar(self.websocket, avatar)
 
