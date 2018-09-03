@@ -14,8 +14,8 @@ def main(async_loop):
     """
     update_json()
 
-    ui = UserInterface(async_loop)
-    ui.run_tk()
+    ui = UserInterface()
+    ui.run_tk(async_loop)
 
     shutdown_showdown()
 

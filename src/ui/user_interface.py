@@ -1,23 +1,30 @@
 import asyncio
-import tkinter
 import threading
 
+from tkinter import *
+
+from src.helpers import Singleton, singleton_object
 from src.io_process.showdown import create_websocket
 
-class UserInterface():
-    def __init__(self, async_loop):
-        self.root = tkinter.Tk()
-        self.entry = tkinter.Entry(self.root)
+@singleton_object
+class UserInterface(metaclass=Singleton):
+    def __init__(self):
+        self.async_loop = None
+        self.root = Tk()
+        self.entry = Entry(self.root)
         self.entry.grid()
 
-        self.start_showdown = tkinter.Button(self.root, text='Start Showdown', command=lambda:self.do_tasks(async_loop)).grid()
+        self.start_showdown = Button(self.root, text='Start Showdown', command=lambda:self.__start_showdown_task(), state="active")
+        self.start_showdown.grid()
 
-    def _asyncio_thread(self, async_loop):
+    def __asyncio_thread(self, async_loop):
         async_loop.run_until_complete(create_websocket())
     
-    def do_tasks(self, async_loop):
+    def __start_showdown_task(self):
         """ Button-Event-Handler starting the asyncio part. """
-        threading.Thread(target=self._asyncio_thread, args=(async_loop,)).start()
+        self.start_showdown.config(state="disabled")
+        threading.Thread(target=self.__asyncio_thread, args=(self.async_loop,)).start()
 
-    def run_tk(self):
+    def run_tk(self, async_loop):
+        self.async_loop = async_loop
         self.root.mainloop()
