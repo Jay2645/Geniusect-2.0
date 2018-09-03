@@ -27,11 +27,6 @@ class Match:
         self.turn_timer = 0
         self.tier = ""
 
-    def open_window(self):
-        from src.ui.user_interface import open_window
-        open_window(self)
-
-
     def set_player_name(self, player_id, player_name):
         from src.io_process.showdown import Showdown
         login = Showdown()
