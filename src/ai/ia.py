@@ -1,5 +1,6 @@
 from src.ai.move_efficiency import effi_move, effi_boost, effi_pkm
 from src.game_engine.game_calcs import type_damage_calculation
+from src.helpers import player_id_to_index, get_enemy_id_from_player_id
 
 def make_best_order(battle, form=None):
     """
@@ -8,8 +9,8 @@ def make_best_order(battle, form=None):
     :param form: Battle format.
     :return: List of pokemon in bot_team sorted by efficiency ([[1, 6], [-oo, +oo]]).
     """
-    team = battle.bot_team
-    enemy_team = battle.enemy_team
+    team = battle.teams[player_id_to_index(battle.player_id)]
+    enemy_team = battle.teams[get_enemy_id_from_player_id(battle.player_id)]
     ordered_team = []
     for i, pokemon in enumerate(team.pokemon):
         average_efficiency = 0
@@ -36,8 +37,8 @@ def make_best_switch(battle, force_switch):
     :return: (Index of pokemon in bot_team (Integer, [-1, 6]), efficiency (Integer, [0, +oo[))
     """
     print("Looking at our best options to switch")
-    team = battle.bot_team
-    enemy_pkm = battle.enemy_team.active()
+    team = battle.teams[player_id_to_index(battle.player_id)]
+    enemy_pkm = battle.teams[get_enemy_id_from_player_id(battle.player_id)].active()
     best_pkm = None
     effi = -1024
     for pokemon in team.pokemon:
@@ -90,8 +91,9 @@ def make_best_move(battle):
     """
     pokemon_moves = battle.current_pkm[0]["moves"]
 
-    pokemon = battle.bot_team.active()
-    enemy_pkm = battle.enemy_team.active()
+    pokemon = battle.teams[player_id_to_index(battle.player_id)].active()
+    enemy_team = battle.teams[get_enemy_id_from_player_id(battle.player_id)]
+    enemy_pkm = enemy_team.active()
     best_move = (None, -1)
 
     if len(pokemon_moves) == 1:  # Case Outrage, Mania, Phantom Force, etc.
@@ -104,7 +106,7 @@ def make_best_move(battle):
                 continue
         except KeyError:
             pass
-        effi = effi_move(battle, move, pokemon, enemy_pkm, battle.enemy_team)
+        effi = effi_move(battle, move, pokemon, enemy_pkm, enemy_team)
         if effi > best_move[1]:
             print(move["name"] +"'s score of " + str(effi) + " is greater than the previous best (" + str(best_move[1]) + ")")
             best_move = (i + 1, effi)
@@ -124,8 +126,8 @@ def make_best_action(battle):
     best_enm_atk = 0
     best_bot_atk = 0
 
-    bot_pkm = battle.bot_team.active()
-    enm_pkm = battle.enemy_team.active()
+    bot_pkm = battle.teams[player_id_to_index(battle.player_id)].active()
+    enm_pkm = battle.teams[get_enemy_id_from_player_id(battle.player_id)].active()
 
     if bot_pkm is None:
         raise RuntimeError("We have no active Pokemon")

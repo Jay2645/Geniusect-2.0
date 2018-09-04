@@ -2,6 +2,7 @@ from src.io_process.senders import sendmessage
 from src.io_process.json_loader import request_loader
 from src.game_engine.battle import Battle
 from src.helpers import player_id_to_index
+from src.ui.user_interface import UserInterface
 
 class Match:
     def __init__(self, match_id):
@@ -26,7 +27,8 @@ class Match:
         self.turn = 0
         self.turn_timer = 0
         self.tier = ""
-
+        self.match_window = None
+        
     def set_player_name(self, player_id, player_name):
         from src.io_process.showdown import Showdown
         login = Showdown()
@@ -36,6 +38,7 @@ class Match:
         self.sides[player_index]['name'] = player_name
         self.sides[player_index]['showdown_id'] = player_id
         self.sides[player_index]['is_bot'] = is_us
+        self.sides[player_index]['index'] = player_id
 
         self.battle.update_player(self.sides[player_index], player_index)
 
@@ -76,6 +79,10 @@ class Match:
 
     async def must_make_move(self, websocket):
         await self.battle.make_move(websocket)
+
+    def open_match_window(self):
+        ui = UserInterface()
+        ui.make_new_match(self)
 
     async def game_is_over(self, websocket, winner_name):
         from src.io_process.showdown import Showdown

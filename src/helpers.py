@@ -1,10 +1,19 @@
 # Taken from https://michaelgoerz.net/notes/singleton-objects-in-python.html
 
 def player_id_to_index(player_id):
-    if player_id is 'p1':
+    if player_id == 'p1':
         return 0
-    elif player_id is 'p2':
+    elif player_id == 'p2':
         return 1
+    else:
+        return -1
+
+def get_enemy_id_from_player_id(player_id):
+    player_index = player_id_to_index(player_id)
+    if player_index == 0:
+        return 1
+    elif player_index == 1:
+        return 0
     else:
         return -1
 

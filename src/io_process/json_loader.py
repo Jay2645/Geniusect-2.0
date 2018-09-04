@@ -138,7 +138,7 @@ def team_from_json(pkm_team):
     from src.game_engine.team import Team
     from src.game_engine.pokemon import Pokemon
 
-    bot_team = Team()
+    team = Team()
     for pkm in pkm_team["pokemon"]:
         try:
             newpkm = Pokemon(pkm['details'].split(',')[0], pkm['condition'], pkm['active'],
@@ -146,11 +146,11 @@ def team_from_json(pkm_team):
                                 if len(pkm['details']) > 1 and 'L' in pkm['details'] else 100)
             
             newpkm.load_known([pkm['baseAbility']], pkm["item"], pkm['stats'], pkm['moves'])
-            bot_team.add(newpkm)
+            team.add(newpkm)
         except IndexError:
             pass
 
-    return bot_team
+    return team
 
 def pokemon_from_json(pkm_name):
     """

@@ -10,6 +10,7 @@ from src.io_process import senders, json_loader
 from src.errors import CantSwitchError, MustSwitchError, BattleCrashedError, NoPokemonError, InvalidMoveError, InvalidTargetError, MegaEvolveError
 from src.io_process.showdown import Showdown
 from src.io_process.battlelog_parsing import battlelog_parsing
+from src.ui.user_interface import UserInterface
 from src.game_engine.battle import Battle
 
 nb_fights_max = 2
@@ -103,21 +104,23 @@ async def string_to_action(websocket, message):
     # Login, searching for fights, responding to PMs, etc.
     try:
         string_tab = message.split('|')
+        ui = UserInterface()
+        challenge_mode = ui.selected_challenge.get()
         if string_tab[1] == "challstr":
             # If we got the challstr, we can log in.
             await login.log_in(string_tab[2], string_tab[3])
         elif string_tab[1] == "updateuser" and string_tab[2] == login.username:
             await login.search_for_fights()
-            if login.challenge_mode == 2:
+            if challenge_mode == 2:
                 nb_fights += 1
-        elif string_tab[1] == "deinit" and login.challenge_mode == 2:
+        elif string_tab[1] == "deinit" and challenge_mode == 2:
             # If previous fight is over and we're searching for battles on our own
             if nb_fights < nb_fights_max:  # If we're below our fight limit
                 await senders.searching(websocket, login.formats[0])
                 nb_fights += 1
             elif nb_fights >= nb_fights_max and len(login.battles) == 0:  # If we're out of fights
                 login.log_out()
-        elif "|inactive|Battle timer is ON:" in message and login.challenge_mode == 2:
+        elif "|inactive|Battle timer is ON:" in message and challenge_mode == 2:
             # If previous fight has started and we can do more simultaneous fights, start a new fight
             if len(login.battles) < nb_fights_simu_max and nb_fights < nb_fights_max:
                 await senders.searching(websocket, login.formats[0])

@@ -10,8 +10,6 @@ from src.io_process import senders, json_loader
 from src.io_process.match import Match
 from src.ui.user_interface import UserInterface
 
-challenge_mode = 1
-challenge_player = "EnglishMobster"
 avatar = 117
 
 def shutdown_showdown():
@@ -49,8 +47,6 @@ class Showdown(metaclass=Singleton):
             self.password = logfile.readline()[:-1]
         self.websocket = None
         self.battles = []
-        self.challenge_mode = challenge_mode
-        self.challenge_player = challenge_player
         self.forfeit_exception = None
         self.allow_new_matches = True
         self.formats = [
@@ -97,10 +93,18 @@ class Showdown(metaclass=Singleton):
 
     async def search_for_fights(self):
         # Once we are connected.
-        if self.challenge_mode == 1:
-            await senders.challenge(self.websocket, self.challenge_player, self.formats[0])
-        elif self.challenge_mode == 2:
-            await senders.searching(self.websocket, self.formats[0])
+        
+        ui = UserInterface()
+        challenge_mode = ui.selected_challenge.get()
+
+        challenge_format = self.formats[0]
+        if challenge_mode == 1:
+            challenge_player = ui.challenger_name.get()
+            print("Challenging " + challenge_player + " using " + challenge_format)
+            await senders.challenge(self.websocket, challenge_player, self.formats[0])
+        elif challenge_mode == 2:
+            print("Searching for a match on the " + challenge_format + " ladder.")
+            await senders.searching(self.websocket, challenge_format)
 
     def check_battle(self, battle_id) -> Match or None:
         """
@@ -120,6 +124,7 @@ class Showdown(metaclass=Singleton):
         print("Starting new battle!")
 
         battle = Match(battle_id)
+        battle.open_match_window()
         self.battles.append(battle)
         await senders.start_timer(self.websocket, battle.battle_id)
 
@@ -142,14 +147,16 @@ class Showdown(metaclass=Singleton):
     def forfeit_all_matches(self, exception=None):
         self.forfeit_exception = exception
         self.allow_new_matches = False
-        asyncio.get_event_loop().create_task(self.__forfeit__())
+        asyncio.get_event_loop().create_task(self.__forfeit())
+        ui = UserInterface()
+        ui.close_windows()
 
     async def forfeit(self, battle):
         print("Forfeiting battle " + battle.battle_id + "!")
         await senders.forfeit_match(self.websocket, battle.battle_id)
         await self.game_over(battle)
         
-    async def __forfeit__(self):
+    async def __forfeit(self):
         print("Forfeiting the game!")
         for battle in self.battles:
             await self.forfeit(battle)
@@ -157,5 +164,7 @@ class Showdown(metaclass=Singleton):
             raise self.forfeit_exception
 
     def log_out(self):
+        ui = UserInterface()
+        ui.close_windows()
         print("Logging out.")
         exit(0)

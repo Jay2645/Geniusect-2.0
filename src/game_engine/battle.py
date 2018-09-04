@@ -7,6 +7,7 @@ from src.game_engine.pokemon import Pokemon, Status
 from src.game_engine.team import Team
 from src.io_process import senders
 from src.errors import ShowdownError
+from src.helpers import player_id_to_index, get_enemy_id_from_player_id
 
 
 class Battle:
@@ -20,8 +21,7 @@ class Battle:
         init Battle method.
         :param battle_id: String, battle_id of battle.
         """
-        self.bot_team = Team()
-        self.enemy_team = Team()
+        self.teams = [Team(), Team()]
         self.current_pkm = None
         self.turn = 0
         self.battle_id = battle_id
@@ -29,12 +29,13 @@ class Battle:
         print("Battle started")
         
     async def update_us(self, team_details):
-        self.bot_team = team_details['team']
+        player_index = player_id_to_index(self.player_id)
+        self.teams[player_index] = team_details['team']
         self.current_pkm = team_details['active']
         self.turn = team_details['turn']
 
         print("Our team:")
-        print(str(self.bot_team))
+        print(str(self.teams[player_index]))
 
         if team_details['force_switch']:
             from src.io_process.showdown import Showdown
@@ -48,37 +49,37 @@ class Battle:
         :param level: int, Pokemon's level
         :param condition: str current_hp/total_hp. /100 if enemy pkm.
         """
-
+        enemy_index = get_enemy_id_from_player_id(self.player_id)
         if "-mega" in pkm_name.lower():
-            self.enemy_team.remove(pkm_name.lower().split("-mega")[0])
+            self.teams[enemy_index].remove(pkm_name.lower().split("-mega")[0])
         if "-*" in pkm_name.lower():
             pkm_name = re.sub(r"(.+)-\*", r"\1", pkm_name)
         elif re.compile(r".+-.*").search(pkm_name.lower()):
             try:
-                self.enemy_team.remove(re.sub(r"(.+)-.+", r"\1", pkm_name))
+                self.teams[enemy_index].remove(re.sub(r"(.+)-.+", r"\1", pkm_name))
             except NameError:
                 pass
 
         # Check to see if the Pokemon is in the enemy team
-        if pkm_name not in self.enemy_team:
+        if pkm_name not in self.teams[enemy_index]:
             # This is a new Pokemon we're seeing
             # Mark all enemy Pokemon as inactive
-            for pkm in self.enemy_team.pokemon:
+            for pkm in self.teams[enemy_index].pokemon:
                 pkm.active = False
             # Load this new Pokemon with an unknown set of data
             pkm = Pokemon(pkm_name, condition, True, level)
             pkm.load_unknown()
-            self.enemy_team.add(pkm)
+            self.teams[enemy_index].add(pkm)
         else:
             # This is a Pokemon we already know about
-            for pkm in self.enemy_team.pokemon:
+            for pkm in self.teams[enemy_index].pokemon:
                 # Mark this Pokemon as active and the others as inactive
                 if pkm.name.lower() == pkm_name.lower():
                     pkm.active = True
                 else:
                     pkm.active = False
         print("Enemy team:")
-        print(str(self.enemy_team))
+        print(str(self.teams[enemy_index]))
 
     def update_player(self, player_data, player_index):
         if player_data['is_bot']:
@@ -126,7 +127,7 @@ class Battle:
             pokemon.buff[stat] = [buff, modifs[str(buff)]]
 
     def cant_take_action(self, disabled_action):
-        active_pkm = self.bot_team.active()
+        active_pkm = self.teams[player_id_to_index(self.player_id)].active()
         for move in active_pkm.moves:
             if move["id"] == disabled_action:
                 move["disabled"] = True
@@ -152,7 +153,7 @@ class Battle:
         if not best_move:
             best_move = make_best_move(self)
 
-        pokemon = self.bot_team.active()
+        pokemon = self.teams[player_id_to_index(self.player_id)].active()
         if best_move[1] == 1024:
             print("Using locked-in move!")
         else:
@@ -172,7 +173,7 @@ class Battle:
         if not best_switch:
             best_switch = make_best_switch(self, force_switch)[0]
         if best_switch >= 0:
-            print("Making a switch to " + self.bot_team.pokemon[best_switch - 1].name)
+            print("Making a switch to " + self.teams[player_id_to_index(self.player_id)].pokemon[best_switch - 1].name)
         else:
             raise RuntimeError("Could not determine a Pokemon to switch to.")
         await senders.sendswitch(websocket, self.battle_id, best_switch, self.turn)
