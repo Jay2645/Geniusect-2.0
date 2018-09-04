@@ -119,9 +119,9 @@ def request_loader(server_json):
         move_data = active_moves[0]['moves']
         for i in range(len(move_data)):
             for j in range(len(active_pkm.moves)):
-                if active_pkm.moves[j]['id'] == move_data[i]['id']:
-                    active_pkm.moves[i]['pp'] = move_data[i]['pp']
-                    active_pkm.moves[i]['disabled'] = move_data[i]['disabled']
+                if active_pkm.moves[j].id == move_data[i]['id']:
+                    active_pkm.moves[i].pp = move_data[i]['pp']
+                    active_pkm.moves[i].disabled = move_data[i]['disabled']
 
     output['team'] = objteam
     output['active'] = active_moves
@@ -137,6 +137,7 @@ def request_loader(server_json):
 def team_from_json(pkm_team):
     from src.game_engine.team import Team
     from src.game_engine.pokemon import Pokemon
+    from src.game_engine.move import Move
 
     bot_team = Team()
     for pkm in pkm_team["pokemon"]:
@@ -144,8 +145,11 @@ def team_from_json(pkm_team):
             newpkm = Pokemon(pkm['details'].split(',')[0], pkm['condition'], pkm['active'],
                                 pkm['details'].split(',')[1].split('L')[1]
                                 if len(pkm['details']) > 1 and 'L' in pkm['details'] else 100)
-            
-            newpkm.load_known([pkm['baseAbility']], pkm["item"], pkm['stats'], pkm['moves'])
+            moveset = []
+            for json_move in pkm['moves']:
+                move = Move({"id":json_move})
+                moveset.append(move)
+            newpkm.load_known([pkm['baseAbility']], pkm["item"], pkm['stats'], moveset)
             bot_team.add(newpkm)
         except IndexError:
             pass
@@ -158,6 +162,7 @@ def pokemon_from_json(pkm_name):
     :param pkm_name: Pokemon's name
     :return: Dict. {types, possibleAbilities, baseStats, possibleMoves}
     """
+    from src.game_engine.move import Move
 
     pkm_name = pkm_name.lower().replace('-', '').replace(' ', '').replace('%', '').replace('\'', '').replace('.', '')
     if pkm_name == 'mimikyubusted':
@@ -174,10 +179,21 @@ def pokemon_from_json(pkm_name):
     res["types"] = current_pokemon["types"]
     res["possibleAbilities"] = list(current_pokemon["abilities"].values())
     res["baseStats"] = current_pokemon["baseStats"]
+    
     try:
         pokemon_moves = format_moves[pkm_name]["randomBattleMoves"]
     except KeyError:
-        raise KeyError("Could not find valid moves for " + pkm_name)
-    for move in pokemon_moves:
-        res["possibleMoves"].append(moves[move])
+        if pkm_name == "castform":
+            # Castform is weird
+            try:
+                pokemon_moves = format_moves["castformsunny"]["randomBattleMoves"]
+                pokemon_moves.update(format_moves["castformrainy"]["randomBattleMoves"])
+                pokemon_moves.update(format_moves["castformsnowy"]["randomBattleMoves"])
+            except KeyError:
+                raise KeyError("Castform had a weird bug")
+        else:
+            raise KeyError("Could not find valid moves for " + pkm_name)
+    for json_move in pokemon_moves:
+        move = Move({"id":json_move})
+        res["possibleMoves"].append(move)
     return res

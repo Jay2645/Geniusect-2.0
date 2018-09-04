@@ -49,17 +49,17 @@ def effi_status(move, pkm1, pkm2, team):
         return 0
     elif "Synchronize" in pkm2.abilities:
         return 0
-    elif move["id"] in ["toxic", "poisonpowder"]:
+    elif move.id in ["toxic", "poisonpowder"]:
         if "Poison" in pkm2.types or "Steel" in pkm2.types:
             return 0
         return 100
-    elif move["id"] in ["thunderwave", "stunspore", "glare"]:
+    elif move.id in ["thunderwave", "stunspore", "glare"]:
         if "Electric" in pkm2.types or "Ground" in pkm2.types:
             return 0
         if pkm1.base_stats["spe"] - pkm2.base_stats["spe"] < 10:
             return 200
         return 100
-    elif move["id"] == "willowisp":
+    elif move.id == "willowisp":
         if "Fire" in pkm2.types:
             return 0
         if pkm2.base_stats["atk"] - pkm2.base_stats["spa"] > 10:
@@ -69,7 +69,7 @@ def effi_status(move, pkm1, pkm2, team):
         for pkm in team.pokemon:  # Sleep clause
             if pkm.status == Status.asleep:
                 return 0
-        if move["id"] in ["spore", "sleeppowder"] and "Grass" in pkm2.types \
+        if move.id in ["spore", "sleeppowder"] and "Grass" in pkm2.types \
                 or "Vital Spirit" in pkm2.abilities \
                 or "Insomnia" in pkm2.abilities:
             return 0
@@ -82,16 +82,16 @@ def entry_hazard_status(move, enemy_team):
             valid_pokemon -= 1
     if valid_pokemon <= 0:
         # They can't switch, so don't bother
-        print("Assigning " + move["name"] + " a weight of 0 as the enemy can't switch!")
+        print("Assigning " + move.name + " a weight of 0 as the enemy can't switch!")
         return 0
 
-    if move["id"] in ["stealthrock"] and enemy_team.entry_hazards["stealth_rock"] > 0:
+    if move.id == "stealthrock" and enemy_team.entry_hazards["stealth_rock"] > 0:
         return 0
-    if move["id"] in ["stickyweb"] and enemy_team.entry_hazards["sticky_web"] > 0:
+    if move.id == "stickyweb" and enemy_team.entry_hazards["sticky_web"] > 0:
         return 0
-    if move["id"] in ["spikes"] and enemy_team.entry_hazards["spikes"] >= 3:
+    if move.id == "spikes" and enemy_team.entry_hazards["spikes"] >= 3:
         return 0
-    if move["id"] in ["toxicspikes"] and enemy_team.entry_hazards["toxic_spikes"] >= 2:
+    if move.id == "toxicspikes" and enemy_team.entry_hazards["toxic_spikes"] >= 2:
         return 0
 
     return 50 * valid_pokemon
@@ -125,7 +125,7 @@ def effi_move(battle, move, pkm1, pkm2, team):
     :return: Float
     """
 
-    if "reflectable" in move["flags"] and "Magic Bounce" in pkm2.abilities:
+    if "reflectable" in move.flags and "Magic Bounce" in pkm2.abilities:
         return 0
 
     non_volatile_status_moves = [
@@ -150,24 +150,24 @@ def effi_move(battle, move, pkm1, pkm2, team):
     if "No Guard" in pkm1.abilities or "No Guard" in pkm2.abilities:
         accuracy = 1
     else:
-        accuracy = int(move["accuracy"])
+        accuracy = move.accuracy
         if accuracy > 1:
             accuracy /= 100
 
-    if move["id"] in entry_hazard_moves:
+    if move.id in entry_hazard_moves:
         weight = entry_hazard_status(move, pkm2.team)
-    elif move["id"] in entry_hazard_removal:
+    elif move.id in entry_hazard_removal:
         weight = entry_hazard_removal_status(move, team)
-        if move["id"] is "rapidspin":
+        if move.id == "rapidspin":
             # Rapid Spin doesn't affect Ghost Types
             weight *= damage_calculation(battle, move, pkm1, pkm2)
-    elif move["id"] in non_volatile_status_moves and pkm2.status == Status.healthy:
+    elif move.id in non_volatile_status_moves and pkm2.status == Status.healthy:
         weight = effi_status(move, pkm1, pkm2, team)
     else:
         weight = damage_calculation(battle, move, pkm1, pkm2)
     modified_weight = weight * accuracy
     if pkm1.team is battle.bot_team and pkm1.active:
-        print("Assigning a weight of " + str(modified_weight) + " for " + pkm1.name + "'s " + move["name"] + " "+str(weight) + " plus " + str(accuracy))
+        print("Assigning a weight of " + str(modified_weight) + " for " + pkm1.name + "'s " + move.name + " "+str(weight) + " plus " + str(accuracy))
     return modified_weight
 
 
@@ -194,7 +194,7 @@ def effi_pkm(battle, pkm1, pkm2, is_forced_switch):
     for move in pkm1.moves:
         dmg = effi_move(battle, move, pkm1, pkm2, pkm1.team)
         if effi1 < dmg:
-            pkm1_move_name = move["name"]
+            pkm1_move_name = move.name
             effi1 = dmg
 
 
@@ -221,7 +221,7 @@ def effi_pkm(battle, pkm1, pkm2, is_forced_switch):
         dmg = effi_move(battle, move, pkm2, pkm1, pkm2.team)
         if effi2 < dmg:
             effi2 = dmg
-            pkm2_move_name = move["name"]
+            pkm2_move_name = move.name
 
     # Subtract our attack from the attacker's HP
     pkm1_hp -= effi2

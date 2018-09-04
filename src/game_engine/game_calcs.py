@@ -40,9 +40,9 @@ def side_modifier(move, team):
     :param pkm2: Team taking the hit
     :return: Float [0; +oo]
     """
-    if move["category"] == "Special" and team is not None and team.light_screen:
+    if move.category == "Special" and team is not None and team.light_screen:
         return 0.5
-    elif move["category"] == "Physical" and team is not None and team.reflect:
+    elif move.category == "Physical" and team is not None and team.reflect:
         return 0.5
     else:
         return 1
@@ -59,13 +59,13 @@ def item_modifier(move, pkm1, pkm2):
     mod = 1
     if pkm1.item == "lifeorb":
         mod *= 1.3
-    elif pkm1.item == "expertbelt" and efficiency(move["type"], pkm2.types) > 1:
+    elif pkm1.item == "expertbelt" and efficiency(move.type, pkm2.types) > 1:
         mod *= 1.2
-    elif pkm1.item == "choicespecs" and move["category"] == "Special":
+    elif pkm1.item == "choicespecs" and move.category == "Special":
         mod *= 1.5
-    elif pkm1.item == "choiceband" and move["category"] == "Physical":
+    elif pkm1.item == "choiceband" and move.category == "Physical":
         mod *= 1.5
-    elif pkm1.item == "thickclub" and move["category"] == "Physical":
+    elif pkm1.item == "thickclub" and move.category == "Physical":
         mod *= 1.5
 
     return mod
@@ -73,14 +73,14 @@ def item_modifier(move, pkm1, pkm2):
 def our_ability_modifier(move, pkm1, pkm2):
     mod = 1
     from src.game_engine.pokemon import Status
-    if "Tinted Lens" in pkm1.abilities and efficiency(move["type"], pkm2.types) < 1:
+    if "Tinted Lens" in pkm1.abilities and efficiency(move.type, pkm2.types) < 1:
         mod *= 2
-    elif "Guts" in pkm1.abilities and pkm1.status != Status.healthy and move["category"] == "Physical":
+    elif "Guts" in pkm1.abilities and pkm1.status != Status.healthy and move.category == "Physical":
         mod *= 1.5
     if "Fluffy" in pkm2.abilities:
-        if "contact" in move["flags"].keys():
+        if "contact" in move.flags.keys():
             mod *= 0.5
-        elif move["type"] == "Fire" and "contact" not in move["flags"].keys():
+        elif move.type == "Fire" and "contact" not in move.flags.keys():
             mod *= 2
     return mod
 
@@ -140,20 +140,20 @@ def damage_calculation(battle, move, pkm1, pkm2):
     """
 
     # Determine which values we're operating on
-    category = ("spa", "spd") if move['category'] == "Special" else ("atk", "def")
+    category = ("spa", "spd") if move.category == "Special" else ("atk", "def")
 
     # Calculate actual attack and defense stats
     atk = pkm1.get_stat_value(category[0]) * pkm1.buff_affect(category[0])
     defe = pkm2.get_stat_value(category[1]) * pkm2.buff_affect(category[1])
 
     # Store move power
-    power = move["basePower"]
+    power = move.base_power
 
     # Calculate Same Type Attack Bonus (STAB)
-    stab = 1.5 if move["type"] in pkm1.types else 1
+    stab = 1.5 if move.type in pkm1.types else 1
 
     # Calculate effectiveness (super-effective, not very effective, no effect, stored as a float damage modifier)
-    effi = type_damage_calculation(move["type"], pkm2)
+    effi = type_damage_calculation(move.type, pkm2)
 
     # When a Pokemon is burned, its physical attacks do half damage
     from src.game_engine.pokemon import Status
