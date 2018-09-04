@@ -53,6 +53,11 @@ class ShowdownWindow(Tk):
         self.showdown_label.config(text="Connecting to Showdown servers.")
         threading.Thread(target=self.__asyncio_thread, args=(self.async_loop,)).start()
 
+class BattleWindow(Toplevel):
+    def __init__(self, master, match):
+        super().__init__(master)
+        self.match = match
+        self.title(match.battle_id)
 
 @singleton_object
 class UserInterface(metaclass=Singleton):
@@ -80,18 +85,17 @@ class UserInterface(metaclass=Singleton):
         try:
             # The message queue is a list of matches 
             match = self.msg_queue.get_nowait()
-            __create_match_window(match)
+            print("Found new match!")
+            self.__create_match_window(match)
         except queue.Empty:
             pass
         # Check again in 200 ms
         self.root.after(200, self.__check_msg_queue)
 
     def __create_match_window(self, match):
-        match_window = Toplevel(self.root)
-        match_window.title(match.battle_id)
+        match_window = BattleWindow(self.root, match)
         self.windows[match.battle_id] = match_window
 
-        
     def on_logged_in(self, username):
         self.root.showdown_label.config(text="Connected to Pokemon Showdown using username " + username)
 
