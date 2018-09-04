@@ -129,8 +129,8 @@ class Battle:
     def cant_take_action(self, disabled_action):
         active_pkm = self.teams[player_id_to_index(self.player_id)].active()
         for move in active_pkm.moves:
-            if move["id"] == disabled_action:
-                move["disabled"] = True
+            if move.id == disabled_action:
+                move.disabled = True
                 return
         raise ShowdownError("Can't do " + disabled_action)
     
@@ -158,7 +158,7 @@ class Battle:
         if best_move[1] == 1024:
             plan_text = "Using locked-in move!"
         else:
-            plan_text = "Using move " + str(pokemon.moves[best_move[0] - 1]['name'])
+            plan_text = "Using move " + str(pokemon.moves[best_move[0] - 1].name)
 
         print(plan_text)
         from src.ui.user_interface import UserInterface

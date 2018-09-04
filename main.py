@@ -4,7 +4,7 @@ import asyncio
 
 from src.io_process.json_loader import update_json
 
-should_run_headless = False
+should_run_headless = True
 
 def main(async_loop):
     """

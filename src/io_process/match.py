@@ -79,7 +79,7 @@ class Match:
 
     async def cant_take_action(self, disabled_action):
         self.battle.cant_take_action(disabled_action)
-        await self.battle.new(turn(self.turn))
+        await self.battle.new_turn(self.turn)
 
     async def must_make_move(self, websocket):
         await self.battle.make_move(websocket)
