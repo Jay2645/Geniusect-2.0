@@ -117,11 +117,14 @@ def request_loader(server_json):
     # Update our list of moves with metadata about whether they can be used
     if active_moves is not None and active_pkm is not None:
         move_data = active_moves[0]['moves']
-        for i in range(len(move_data)):
-            for j in range(len(active_pkm.moves)):
-                if active_pkm.moves[j]['id'] == move_data[i]['id']:
-                    active_pkm.moves[i]['pp'] = move_data[i]['pp']
-                    active_pkm.moves[i]['disabled'] = move_data[i]['disabled']
+        for i in range(len(active_pkm.moves)):
+            found_move = False
+            for j in range(len(move_data)):
+                if active_pkm.moves[i]['id'] == move_data[j]['id']:
+                    active_pkm.moves[i]['pp'] = move_data[j]['pp']
+                    found_move = True
+                    break
+            active_pkm.moves[i]['disabled'] = not found_move
 
     output['team'] = objteam
     output['active'] = active_moves
@@ -130,6 +133,10 @@ def request_loader(server_json):
         output['force_switch'] = jsonobj['forceSwitch']
     except KeyError:
         output['force_switch'] = False
+    try:
+        output['trapped'] = jsonobj['trapped']
+    except KeyError:
+        output['trapped'] = False
 
     return output
 
