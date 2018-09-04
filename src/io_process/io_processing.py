@@ -105,7 +105,7 @@ async def string_to_action(websocket, message):
     try:
         string_tab = message.split('|')
         ui = UserInterface()
-        challenge_mode = ui.selected_challenge.get()
+        challenge_mode = ui.get_selected_challenge_mode()
         if string_tab[1] == "challstr":
             # If we got the challstr, we can log in.
             await login.log_in(string_tab[2], string_tab[3])

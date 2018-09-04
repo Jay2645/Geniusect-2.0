@@ -95,11 +95,11 @@ class Showdown(metaclass=Singleton):
         # Once we are connected.
         
         ui = UserInterface()
-        challenge_mode = ui.selected_challenge.get()
+        challenge_mode = ui.get_selected_challenge_mode()
 
         challenge_format = self.formats[0]
         if challenge_mode == 1:
-            challenge_player = ui.challenger_name.get()
+            challenge_player = ui.get_challenger_name()
             print("Challenging " + challenge_player + " using " + challenge_format)
             await senders.challenge(self.websocket, challenge_player, self.formats[0])
         elif challenge_mode == 2:
