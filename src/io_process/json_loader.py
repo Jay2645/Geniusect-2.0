@@ -107,6 +107,7 @@ def request_loader(server_json):
     output = {}
 
     objteam = team_from_json(jsonobj['side'])
+    objteam.is_bot = True
 
     active_pkm = objteam.active()
     try:

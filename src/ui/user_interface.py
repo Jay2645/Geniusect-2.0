@@ -59,6 +59,37 @@ class BattleWindow(Toplevel):
         self.match = match
         self.title(match.battle_id)
 
+        self.plan_label = Label(self, text="No plan yet.")
+        self.plan_label.grid(column=0,row=0)
+
+        self.move_labels = []
+        for i in range(4):
+            self.move_labels.append(Label(self, text="None"))
+            self.move_labels[i].grid(column=i+1, row=1)
+
+        self.team_labels = []
+        for i in range(6):
+            self.team_labels.append(Label(self, text="None"))
+            self.team_labels[i].grid(column=i, row=2)
+
+        self.update_teams(match.battle.teams)
+
+    def update_teams(self, teams):
+        for team in teams:
+            if team.is_bot:
+                active = team.active()
+                for i in range(len(active.moves)):
+                    move = active.moves[i]
+                    self.move_labels[i].configure(text=str(move))
+                for i in range(len(team.pokemon)):
+                    self.team_labels[i].configure(text=team.pokemon[i].name)
+
+    def update_plan(self, plan):
+        self.plan_label.configure(text=plan)
+
+    def game_over(self):
+        self.destroy()
+        
 @singleton_object
 class UserInterface(metaclass=Singleton):
     def __init__(self):
@@ -77,6 +108,8 @@ class UserInterface(metaclass=Singleton):
 
     def close_windows(self):
         try:
+            for window in self.windows:
+                self.windows[window].destroy()
             self.root.destroy()
         except TclError:
             pass
@@ -85,7 +118,6 @@ class UserInterface(metaclass=Singleton):
         try:
             # The message queue is a list of matches 
             match = self.msg_queue.get_nowait()
-            print("Found new match!")
             self.__create_match_window(match)
         except queue.Empty:
             pass
@@ -95,6 +127,20 @@ class UserInterface(metaclass=Singleton):
     def __create_match_window(self, match):
         match_window = BattleWindow(self.root, match)
         self.windows[match.battle_id] = match_window
+
+    def update_plan(self, battle_id, plan):
+        try:
+            battle_window = self.windows[battle_id]
+            battle_window.update_plan(plan)
+        except KeyError:
+            pass
+
+    def match_over(self, battle_id):
+        try:
+            battle_window = self.windows.pop(battle_id)
+            battle_window.game_over()
+        except KeyError:
+            pass
 
     def on_logged_in(self, username):
         self.root.showdown_label.config(text="Connected to Pokemon Showdown using username " + username)

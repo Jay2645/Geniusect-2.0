@@ -47,6 +47,8 @@ class Match:
         self.sides[player_index]['team_size'] = team_size
 
         self.battle.update_player(self.sides[player_index], player_index)
+        if self.match_window != None:
+            self.match_window.update_teams(self.battle.teams)
 
     def set_generation(self, generation):
         self.gen = int(generation)
@@ -59,6 +61,8 @@ class Match:
             return
         team_details = request_loader(request)
         await self.battle.update_us(team_details)
+        if self.match_window != None:
+            self.match_window.update_teams(self.battle.teams)
 
     async def new_turn(self, turn_number):
         self.turn = int(turn_number)

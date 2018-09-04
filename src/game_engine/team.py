@@ -7,6 +7,7 @@ class Team:
         """
         init Team method
         """
+        self.is_bot = False
         self.pokemon = []
         self.entry_hazards = {
             "stealth_rock": 0,

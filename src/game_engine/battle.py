@@ -154,10 +154,16 @@ class Battle:
             best_move = make_best_move(self)
 
         pokemon = self.teams[player_id_to_index(self.player_id)].active()
+        plan_text = ""
         if best_move[1] == 1024:
-            print("Using locked-in move!")
+            plan_text = "Using locked-in move!"
         else:
-            print("Using move " + str(pokemon.moves[best_move[0] - 1]['name']))
+            plan_text = "Using move " + str(pokemon.moves[best_move[0] - 1]['name'])
+
+        print(plan_text)
+        from src.ui.user_interface import UserInterface
+        ui = UserInterface()
+        ui.update_plan(self.battle_id, plan_text)
 
         best_move_string = str(best_move[0])
         if "canMegaEvo" in self.current_pkm[0]:
@@ -172,10 +178,18 @@ class Battle:
         """
         if not best_switch:
             best_switch = make_best_switch(self, force_switch)[0]
+
+        plan_text = ""
+
         if best_switch >= 0:
-            print("Making a switch to " + self.teams[player_id_to_index(self.player_id)].pokemon[best_switch - 1].name)
+            plan_text = "Making a switch to " + self.teams[player_id_to_index(self.player_id)].pokemon[best_switch - 1].name
         else:
             raise RuntimeError("Could not determine a Pokemon to switch to.")
+        print(plan_text)
+        from src.ui.user_interface import UserInterface
+        ui = UserInterface()
+        ui.update_plan(self.battle_id, plan_text)
+
         await senders.sendswitch(websocket, self.battle_id, best_switch, self.turn)
 
     async def make_action(self, websocket):

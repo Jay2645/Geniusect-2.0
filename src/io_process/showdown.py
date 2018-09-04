@@ -142,6 +142,8 @@ class Showdown(metaclass=Singleton):
             traceback.print_tb(self.forfeit_exception.__traceback__)
         
         self.battles.remove(battle)
+        ui = UserInterface()
+        ui.match_over(battle.battle_id)
         await senders.leaving(self.websocket, battle.battle_id)
 
     def forfeit_all_matches(self, exception=None):
