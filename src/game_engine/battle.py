@@ -134,8 +134,8 @@ class Battle(Entity):
     def cant_take_action(self, disabled_action):
         active_pkm = self.bot_team.active()
         for move in active_pkm.moves:
-            if move["id"] == disabled_action:
-                move["disabled"] = True
+            if move.id == disabled_action:
+                move.disabled = True
                 return
         raise ShowdownError("Can't do " + disabled_action)
     
@@ -162,7 +162,7 @@ class Battle(Entity):
         if best_move[1] == 1024:
             print("Using locked-in move!")
         else:
-            print("Using move " + str(pokemon.moves[best_move[0] - 1]['name']))
+            print("Using move " + str(pokemon.moves[best_move[0] - 1].name))
 
         best_move_string = str(best_move[0])
         if "canMegaEvo" in self.current_pkm[0]:

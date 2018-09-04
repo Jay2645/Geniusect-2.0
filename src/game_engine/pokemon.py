@@ -70,6 +70,7 @@ class Pokemon:
         self.item = item
         self.base_stats = infos["baseStats"]
         self.stats = stats
+        self.moves = moves
 
         for move in moves:
             self.moves.append(json_loader.moves[move.replace('60', '')])
@@ -205,9 +206,9 @@ class Pokemon:
         output += "\nMoves:"
         for move in self.moves:
             try:
-                output += "\n" + move["name"]
-                output += "\n - " + str(move["pp"]) + " PP"
-                if move["disabled"]:
+                output += "\n" + move.name
+                output += "\n - " + str(move.pp) + " PP"
+                if move.disabled:
                     output += "\n - Move Disabled"
                 else:
                     output += "\n - Move Enabled"

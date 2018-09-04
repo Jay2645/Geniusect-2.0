@@ -28,9 +28,9 @@ class Entity:
 
         # Copy everything over from the data object
         if data is not None:
-            if type(data) is str:
+            if type(data) is dict:
                 # Try to load JSON data
-                from_json(data)
+                self.from_json(data)
             else:
                 self.__dict__.update(data.__dict__)
         if more_data is not None:
@@ -132,5 +132,5 @@ class Entity:
 class Effect(Entity):
     def __init__(self, data, more_data = None):
         super().__init__(data, more_data)
-        if self.effect_type is not in ['Weather', 'Status']:
+        if self.effect_type not in ['Weather', 'Status']:
             self.effect_type = 'Effect'

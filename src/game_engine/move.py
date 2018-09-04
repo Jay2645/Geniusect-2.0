@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from src.game_engine.effects import Entity
+from src.io_process import json_loader
 
 class Move(Entity):
     def __init__(self, move_json):
@@ -15,6 +16,7 @@ class Move(Entity):
         # }
 
         self.id = move_json['id']
+        self.id = str.replace(self.id, "60", "")
         
         # Load from given JSON
         try:
@@ -25,9 +27,7 @@ class Move(Entity):
             self.disabled = False
         
         # Grab move data
-        from src.io_process.showdown import Showdown
-        login = Showdown()
-        movedex = login.moves[self.id]
+        movedex = json_loader.moves[self.id]
 
         # Load and populate entity data
         super().__init__(movedex)
