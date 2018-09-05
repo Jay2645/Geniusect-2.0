@@ -143,12 +143,10 @@ class Showdown(metaclass=Singleton):
             await senders.leaving(self.websocket, battle.battle_id)
         else:
             await senders.sendmessage(self.websocket, battle.battle_id, "Oops, I crashed! Exception data: " + str(self.forfeit_exception) + ". You win!")
-            import traceback
-            traceback.print_tb(self.forfeit_exception.__traceback__)
         
         self.battles.remove(battle)
-        ui = UserInterface()
         if self.forfeit_exception is None:
+            ui = UserInterface()
             ui.match_over(battle.battle_id)
         await senders.leaving(self.websocket, battle.battle_id)
 
@@ -164,28 +162,14 @@ class Showdown(metaclass=Singleton):
         ui.raise_error(self.forfeit_exception)
         #ui.close_windows()
         
-        print("Sent everything to the UI, exiting all battles")
         for battle in self.battles:
             asyncio.get_event_loop().create_task(self.forfeit(battle))
-        print("Sent an exit request to all battles.")
-
-        #asyncio.get_event_loop().create_task(self.__forfeit())
+        
         
     async def forfeit(self, battle):
         print("Forfeiting battle " + battle.battle_id + "!")
         await senders.forfeit_match(self.websocket, battle.battle_id)
         await self.game_over(battle)
-        
-    async def __forfeit(self):
-        print("Forfeiting the game!")
-        for battle in self.battles:
-            await self.forfeit(battle)
-        if self.forfeit_exception is not None:    
-            import sys
-            info = sys.exc_info()
-            ui = UserInterface()
-            ui.raise_error(self.forfeit_exception)
-            #raise self.forfeit_exception
 
     def log_out(self):
         ui = UserInterface()
