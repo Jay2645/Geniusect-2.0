@@ -53,6 +53,49 @@ class ShowdownWindow(Tk):
         self.showdown_label.config(text="Connecting to Showdown servers.")
         threading.Thread(target=self.__asyncio_thread, args=(self.async_loop,)).start()
 
+class PokemonFrame(ttk.Labelframe):
+    def __init__(self, master, pokemon):
+        super().__init__(master, text=str(pokemon))
+        self.pokemon = pokemon
+        for i in range(len(pokemon.moves)):
+            move_label = Label(self, text=pokemon.moves[i].name)
+            move_label.grid(column=0, row=i)
+
+class TeamFrame(ttk.Labelframe):
+    def __init__(self, master, team, frame_text):
+        super().__init__(master, text=frame_text)
+        self.pokemon_frames = []
+        self.team = team
+        #self.update_team(team)
+
+    def update_team(self, new_team):
+        # We generate a new team every turn
+        print("Team update in progress")
+        self.team = new_team
+
+        print("Deleting old team of length " + str(len(self.pokemon_frames)))
+        for pkm_frame in self.pokemon_frames:
+            pkm_frame.destroy()
+        self.pokemon_frames = []
+
+        team_pkm = new_team.pokemon
+
+        for i in range(len(team_pkm)):
+            pkm_frame = PokemonFrame(self, team_pkm[i])
+            pkm_frame.grid(column=i,row=0)
+            print(team_pkm[i].name)
+            self.pokemon_frames.append(pkm_frame)
+
+        if len(self.pokemon_frames) < 6:
+            for i in range(len(self.pokemon_frames), 6):
+                if self.team.is_bot:
+                    pkm_label = Label(self, text="None")
+                else:
+                    pkm_label = Label(self, text="Unknown")
+                pkm_label.grid(column=i, row=0)
+
+        print("Done!")
+
 class BattleWindow(Toplevel):
     def __init__(self, master, match):
         super().__init__(master)
@@ -62,29 +105,31 @@ class BattleWindow(Toplevel):
         self.plan_label = Label(self, text="No plan yet.")
         self.plan_label.grid(column=0,row=0)
 
-        self.move_labels = []
-        for i in range(4):
-            self.move_labels.append(Label(self, text="None"))
-            self.move_labels[i].grid(column=i+1, row=1)
+        print("Making teams.")
+        teams = match.battle.teams
+        if teams[0].is_bot:
+            self.our_team_frame = TeamFrame(self, teams[0], "Our Team")
+            self.enemy_team_frame = TeamFrame(self, teams[1], "Enemy Team")
+        else:
+            self.our_team_frame = TeamFrame(self, teams[1], "Our Team")
+            self.enemy_team_frame = TeamFrame(self, teams[0], "Enemy Team")
 
-        self.team_labels = []
-        for i in range(6):
-            self.team_labels.append(Label(self, text="None"))
-            self.team_labels[i].grid(column=i, row=2)
+        print("Created team frames.")
+
+        self.our_team_frame.grid(column=0, row=1)
+        self.enemy_team_frame.grid(column=0, row=2)
 
         self.update_teams(match.battle.teams)
+        print("Teams updated!")
 
     def update_teams(self, teams):
-        for team in teams:
-            if team.is_bot:
-                print("Updating teams!")
-                active = team.active()
-                for i in range(len(active.moves)):
-                    move = active.moves[i]
-                    print(move)
-                    self.move_labels[i].configure(text=str(move))
-                for i in range(len(team.pokemon)):
-                    self.team_labels[i].configure(text=team.pokemon[i].name)
+        print("Updating teams!")
+        our_team = teams[0] if teams[0].is_bot else teams[1]
+        enemy_team = teams[1] if teams[0].is_bot else teams[0]
+        
+        self.our_team_frame.update_team(our_team)
+        self.enemy_team_frame.update_team(enemy_team)
+        print("All teams updated!")
 
     def update_plan(self, plan):
         self.plan_label.configure(text=plan)
@@ -134,6 +179,13 @@ class UserInterface(metaclass=Singleton):
         try:
             battle_window = self.windows[battle_id]
             battle_window.update_plan(plan)
+        except KeyError:
+            pass
+
+    def update_team_ui(self, battle_id, teams):
+        try:
+            battle_window = self.windows[battle_id]
+            battle_window.update_teams(teams)
         except KeyError:
             pass
 

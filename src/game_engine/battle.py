@@ -29,13 +29,18 @@ class Battle:
         print("Battle started")
         
     async def update_us(self, team_details):
+        from src.ui.user_interface import UserInterface
+        from src.io_process.showdown import Showdown
+
         player_index = player_id_to_index(self.player_id)
         self.teams[player_index] = team_details['team']
         self.current_pkm = team_details['active']
         self.turn = team_details['turn']
 
+        ui = UserInterface()
+        ui.update_team_ui(self.battle_id, self.teams)
+
         if team_details['force_switch']:
-            from src.io_process.showdown import Showdown
             login = Showdown()
             await self.make_switch(login.websocket, None, True)
 
@@ -46,6 +51,7 @@ class Battle:
         :param level: int, Pokemon's level
         :param condition: str current_hp/total_hp. /100 if enemy pkm.
         """
+        from src.ui.user_interface import UserInterface
         enemy_index = get_enemy_id_from_player_id(self.player_id)
         if "-mega" in pkm_name.lower():
             self.teams[enemy_index].remove(pkm_name.lower().split("-mega")[0])
@@ -75,6 +81,9 @@ class Battle:
                     pkm.active = True
                 else:
                     pkm.active = False
+        
+        ui = UserInterface()
+        ui.update_team_ui(self.battle_id, self.teams)
 
     def update_player(self, player_data, player_index):
         if player_data['is_bot']:

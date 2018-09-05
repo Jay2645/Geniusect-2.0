@@ -14,6 +14,7 @@ class Status(Enum):
     burned = 4
     asleep = 5
     frozen = 6
+    fainted = 7
 
 class Pokemon:
     """
@@ -31,7 +32,6 @@ class Pokemon:
         self.current_health = 0
         self.max_health = 0
         self.condition = condition
-        self.status = Status.healthy
         self.active = active
         self.level = int(level)
         self.types = []
@@ -52,6 +52,7 @@ class Pokemon:
             "evasion": [0, 1]
         }
         self.update_health(self.condition)
+        self.status = Status.healthy if not self.is_fainted() else Status.fainted
 
     def load_unknown(self):
         """
@@ -105,6 +106,9 @@ class Pokemon:
             if self.max_health is 0:
                 self.max_health = 100
 
+        if self.is_fainted():
+            self.status = Status.fainted
+
     def is_fainted(self):
         return self.condition == "0 fnt"
 
@@ -137,25 +141,11 @@ class Pokemon:
 
     def __str__(self):
         output = self.name + " (" + str(self.status) + ")"
-        output += " Condition: "
-        if self.is_fainted():
-            output += "Fainted"
-        else:
-            output += str(self.current_health) + "/" + str(self.max_health)
+        if not self.is_fainted():
+            output += "\n" + str(self.current_health) + "/" + str(self.max_health)
         if self.level < 100:
-            output += " Level " + str(self.level)
+            output += "\nLevel " + str(self.level)
         if self.item is not "" and self.item is not None:
             output += " @ " + str(self.item)
         output += "\nAbilities: " + str(self.abilities)
-        output += "\nMoves:"
-        for move in self.moves:
-            try:
-                output += "\n" + move.name
-                output += "\n - " + str(move.pp) + " PP"
-                if move.disabled:
-                    output += "\n - Move Disabled"
-                else:
-                    output += "\n - Move Enabled"
-            except KeyError:
-                pass
         return output
