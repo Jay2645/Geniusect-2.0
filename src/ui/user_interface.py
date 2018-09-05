@@ -77,9 +77,11 @@ class BattleWindow(Toplevel):
     def update_teams(self, teams):
         for team in teams:
             if team.is_bot:
+                print("Updating teams!")
                 active = team.active()
                 for i in range(len(active.moves)):
                     move = active.moves[i]
+                    print(move)
                     self.move_labels[i].configure(text=str(move))
                 for i in range(len(team.pokemon)):
                     self.team_labels[i].configure(text=team.pokemon[i].name)

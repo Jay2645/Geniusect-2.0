@@ -34,9 +34,6 @@ class Battle:
         self.current_pkm = team_details['active']
         self.turn = team_details['turn']
 
-        print("Our team:")
-        print(str(self.teams[player_index]))
-
         if team_details['force_switch']:
             from src.io_process.showdown import Showdown
             login = Showdown()
@@ -78,8 +75,6 @@ class Battle:
                     pkm.active = True
                 else:
                     pkm.active = False
-        print("Enemy team:")
-        print(str(self.teams[enemy_index]))
 
     def update_player(self, player_data, player_index):
         if player_data['is_bot']:
