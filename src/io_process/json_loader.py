@@ -122,7 +122,11 @@ def request_loader(server_json):
             found_move = False
             for j in range(len(move_data)):
                 if active_pkm.moves[i].id == move_data[j]['id']:
-                    active_pkm.moves[i].pp = move_data[j]['pp']
+                    try:
+                        active_pkm.moves[i].pp = move_data[j]['pp']
+                    except KeyError:
+                        # Outrage doesn't take any PP when it's in effect
+                        pass
                     found_move = True
                     break
             active_pkm.moves[i].disabled = not found_move

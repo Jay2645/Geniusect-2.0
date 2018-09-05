@@ -103,10 +103,10 @@ class Move(Entity):
 
         try:
             damage_type = movedex['damage']
-            self.does_damage_based_on_level = damage_type is "level"
+            self.does_damage_based_on_level = damage_type == "level"
             try:
                 self.constant_damage_amount = int(damage_type)
-            except TypeError:
+            except ValueError:
                 self.set_damage_amount = 0
         except KeyError:
             self.does_damage_based_on_level = False
