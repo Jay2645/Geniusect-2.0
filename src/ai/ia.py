@@ -101,11 +101,9 @@ def make_best_move(battle):
         return 1, 100
 
     for i, move in enumerate(pokemon.moves):  # Classical parse
-        try:
-            if move.disabled or move.pp <= 0:
-                continue
-        except KeyError:
-            pass
+        if move.disabled or move.pp <= 0:
+            print("Cannot use " + move.name + " as it is disabled!")
+            continue
         effi = effi_move(battle, move, pokemon, enemy_pkm, enemy_team)
         if effi > best_move[1]:
             print(move.name +"'s score of " + str(effi) + " is greater than the previous best (" + str(best_move[1]) + ")")

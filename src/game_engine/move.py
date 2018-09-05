@@ -214,5 +214,7 @@ class Move(Entity):
         output = self.name
         if self.disabled:
             output += " (Disabled)"
+        else:
+            output += " (Enabled)"
         output += "\n" + str(self.pp) + "/" + str(self.max_pp) + " PP"
         return output

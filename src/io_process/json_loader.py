@@ -116,8 +116,10 @@ def request_loader(server_json):
         active_moves = None
 
     # Update our list of moves with metadata about whether they can be used
+    print("Updating active moves!")
     if active_moves is not None and active_pkm is not None:
         move_data = active_moves[0]['moves']
+        print("Active move data: " + str(move_data))
         for i in range(len(active_pkm.moves)):
             found_move = False
             for j in range(len(move_data)):
@@ -128,12 +130,13 @@ def request_loader(server_json):
                     except KeyError:
                         # Outrage doesn't take any PP when it's in effect
                         pass
-                    if active_pkm.moves[i].disabled:
-                        print(active_pkm.name + "'s " + move_data[j]['move'] + " is disabled.")
                     found_move = True
                     break
-            active_pkm.moves[i].disabled = not found_move
-
+            if not active_pkm.moves[i].disabled:
+                # If our move isn't already disabled, disable it if we can't find it
+                # Sometimes a disabled move just isn't listed in the active array.
+                active_pkm.moves[i].disabled = not found_move
+            
     output['team'] = objteam
     output['active'] = active_moves
     output['turn'] = jsonobj['rqid']
@@ -142,8 +145,8 @@ def request_loader(server_json):
     except KeyError:
         output['force_switch'] = False
     try:
-        output['trapped'] = jsonobj['trapped']
-    except KeyError:
+        output['trapped'] = active_moves[0]['trapped']
+    except (KeyError, TypeError):
         output['trapped'] = False
 
     return output

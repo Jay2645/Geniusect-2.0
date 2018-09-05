@@ -102,7 +102,7 @@ def minor_actions(battle: Battle, split_line):
                 print(str(bot_team.entry_hazards["spikes"]) + " layers of Spikes have been added to our side!")
             else:
                 enemy_team.entry_hazards["spikes"] += 1
-                print(str(battle.enemy_team.entry_hazards["spikes"]) + " layers of Spikes have been added to the enemy side!")
+                print(str(enemy_team.entry_hazards["spikes"]) + " layers of Spikes have been added to the enemy side!")
         elif "Sticky Web" in split_line[2]:
             if battle.player_id in split_line[1]:
                 bot_team.entry_hazards["sticky_web"] = 1

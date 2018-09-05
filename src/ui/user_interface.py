@@ -69,7 +69,6 @@ class TeamFrame(ttk.Labelframe):
         super().__init__(master, text=frame_text)
         self.pokemon_frames = []
         self.team = team
-        #self.update_team(team)
 
     def update_team(self, new_team):
         # We generate a new team every turn
@@ -97,14 +96,18 @@ class TeamFrame(ttk.Labelframe):
 
 class BattleWindow(Toplevel):
     def __init__(self, master, match):
+        try:
+            battle_id = match.battle_id
+        except AttributeError:
+            return
+
         super().__init__(master)
         self.match = match
-        self.title(match.battle_id)
+        self.title(battle_id)
 
         self.plan_label = Label(self, text="No plan yet.")
         self.plan_label.grid(column=0,row=0)
 
-        print("Making teams.")
         teams = match.battle.teams
         if teams[0].is_bot:
             self.our_team_frame = TeamFrame(self, teams[0], "Our Team")
@@ -113,22 +116,17 @@ class BattleWindow(Toplevel):
             self.our_team_frame = TeamFrame(self, teams[1], "Our Team")
             self.enemy_team_frame = TeamFrame(self, teams[0], "Enemy Team")
 
-        print("Created team frames.")
-
         self.our_team_frame.grid(column=0, row=1)
         self.enemy_team_frame.grid(column=0, row=2)
 
         self.update_teams(match.battle.teams)
-        print("Teams updated!")
 
     def update_teams(self, teams):
-        print("Updating teams!")
         our_team = teams[0] if teams[0].is_bot else teams[1]
         enemy_team = teams[1] if teams[0].is_bot else teams[0]
         
         self.our_team_frame.update_team(our_team)
         self.enemy_team_frame.update_team(enemy_team)
-        print("All teams updated!")
 
     def update_plan(self, plan):
         self.plan_label.configure(text=plan)
@@ -150,7 +148,6 @@ class UserInterface(metaclass=Singleton):
         return self.root.selected_challenge.get()
 
     def raise_error(self, error):
-        print("Recieved error!")
         self.msg_queue = queue.Queue()
         self.msg_queue.put_nowait(error)
 
@@ -158,7 +155,6 @@ class UserInterface(metaclass=Singleton):
         self.msg_queue.put_nowait(match)
 
     def close_windows(self):
-        print("Closing all windows!")
         try:
             for window in self.windows:
                 self.windows[window].destroy()
@@ -169,23 +165,23 @@ class UserInterface(metaclass=Singleton):
     def __check_msg_queue(self):
         try:
             object = self.msg_queue.get_nowait()
-            print("Grabbed " + str(type(object)))
-            if type(object) is Exception:
+            if not self.__create_match_window(object):
+                # We can pass exceptions into the queue as well
                 raise object
-#            elif type(object) == builtin_function_or_method:
-#                from src.errors import ShowdownError
-#                error = ShowdownError("Problem when running Showdown bot!")
-#                raise error.with_traceback(object)
-            else:
-                self.__create_match_window(object)
         except queue.Empty:
             pass
         # Check again in 200 ms
         self.root.after(200, self.__check_msg_queue)
 
     def __create_match_window(self, match):
+        try:
+            battle_id = match.battle_id
+        except AttributeError:
+            return False
+
         match_window = BattleWindow(self.root, match)
-        self.windows[match.battle_id] = match_window
+        self.windows[battle_id] = match_window
+        return True
 
     def update_plan(self, battle_id, plan):
         try:

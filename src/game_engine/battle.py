@@ -43,6 +43,9 @@ class Battle:
         if team_details['force_switch']:
             login = Showdown()
             await self.make_switch(login.websocket, None, True)
+        elif team_details['trapped']:
+            login = Showdown()
+            await self.make_move(login.websocket)
 
     def update_enemy(self, pkm_name, level, condition):
         """
