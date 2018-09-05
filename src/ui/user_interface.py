@@ -58,7 +58,10 @@ class PokemonFrame(ttk.Labelframe):
         super().__init__(master, text=str(pokemon))
         self.pokemon = pokemon
         for i in range(len(pokemon.moves)):
-            move_label = Label(self, text=pokemon.moves[i].name)
+            move = pokemon.moves[i]
+            if move is None:
+                continue
+            move_label = Label(self, text=str(move))
             move_label.grid(column=0, row=i)
 
 class TeamFrame(ttk.Labelframe):
@@ -70,10 +73,8 @@ class TeamFrame(ttk.Labelframe):
 
     def update_team(self, new_team):
         # We generate a new team every turn
-        print("Team update in progress")
         self.team = new_team
-
-        print("Deleting old team of length " + str(len(self.pokemon_frames)))
+        
         for pkm_frame in self.pokemon_frames:
             pkm_frame.destroy()
         self.pokemon_frames = []
@@ -83,7 +84,6 @@ class TeamFrame(ttk.Labelframe):
         for i in range(len(team_pkm)):
             pkm_frame = PokemonFrame(self, team_pkm[i])
             pkm_frame.grid(column=i,row=0)
-            print(team_pkm[i].name)
             self.pokemon_frames.append(pkm_frame)
 
         if len(self.pokemon_frames) < 6:
@@ -94,7 +94,6 @@ class TeamFrame(ttk.Labelframe):
                     pkm_label = Label(self, text="Unknown")
                 pkm_label.grid(column=i, row=0)
 
-        print("Done!")
 
 class BattleWindow(Toplevel):
     def __init__(self, master, match):
@@ -150,10 +149,16 @@ class UserInterface(metaclass=Singleton):
     def get_selected_challenge_mode(self):
         return self.root.selected_challenge.get()
 
+    def raise_error(self, error):
+        print("Recieved error!")
+        self.msg_queue = queue.Queue()
+        self.msg_queue.put_nowait(error)
+
     def make_new_match(self, match):
         self.msg_queue.put_nowait(match)
 
     def close_windows(self):
+        print("Closing all windows!")
         try:
             for window in self.windows:
                 self.windows[window].destroy()
@@ -163,9 +168,16 @@ class UserInterface(metaclass=Singleton):
 
     def __check_msg_queue(self):
         try:
-            # The message queue is a list of matches 
-            match = self.msg_queue.get_nowait()
-            self.__create_match_window(match)
+            object = self.msg_queue.get_nowait()
+            print("Grabbed " + str(type(object)))
+            if type(object) is Exception:
+                raise object
+#            elif type(object) == builtin_function_or_method:
+#                from src.errors import ShowdownError
+#                error = ShowdownError("Problem when running Showdown bot!")
+#                raise error.with_traceback(object)
+            else:
+                self.__create_match_window(object)
         except queue.Empty:
             pass
         # Check again in 200 ms

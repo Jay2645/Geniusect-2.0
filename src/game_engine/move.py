@@ -17,6 +17,12 @@ class Move(Entity):
 
         self.id = move_json['id']
         self.id = str.replace(self.id, "60", "")
+
+        # Grab move data
+        movedex = json_loader.moves[self.id]
+
+        # Load and populate entity data
+        super().__init__(movedex)
         
         # Load from given JSON
         try:
@@ -24,14 +30,10 @@ class Move(Entity):
             self.max_pp = move_json['maxpp']
             self.disabled = move_json['disabled']
         except KeyError:
+            self.current_pp = self.pp
+            self.max_pp = self.pp
             self.disabled = False
         
-        # Grab move data
-        movedex = json_loader.moves[self.id]
-
-        # Load and populate entity data
-        super().__init__(movedex)
-
         self.ignore_negative_offensive = False
         self.ignore_positive_defensive = False
         self.z_broke_protect = False
@@ -207,3 +209,10 @@ class Move(Entity):
             self.ignore_offensive = movedex['ignoreOffensive']
         except KeyError:
             self.ignore_offensive = False
+
+    def __str__(self):
+        output = self.name
+        if self.disabled:
+            output += " (Disabled)"
+        output += "\n" + str(self.pp) + "/" + str(self.max_pp) + " PP"
+        return output

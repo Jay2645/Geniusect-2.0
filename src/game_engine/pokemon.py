@@ -147,5 +147,7 @@ class Pokemon:
             output += "\nLevel " + str(self.level)
         if self.item is not "" and self.item is not None:
             output += " @ " + str(self.item)
-        output += "\nAbilities: " + str(self.abilities)
+        output += "\nAbilities:" 
+        for ability in self.abilities:
+            output += "\n"+ability
         return output

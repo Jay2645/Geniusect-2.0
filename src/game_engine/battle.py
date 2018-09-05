@@ -89,6 +89,13 @@ class Battle:
         if player_data['is_bot']:
             self.player_id = player_data['showdown_id']
 
+    def get_bot_team(self):
+        return self.teams[0] if self.teams[0].is_bot else self.teams[1]
+
+    def get_active_pokemon(self):
+        our_team = self.get_bot_team()
+        return our_team.active()
+
     @staticmethod
     def update_status(pokemon, status: str = ""):
         """

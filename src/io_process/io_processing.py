@@ -81,8 +81,10 @@ async def filter_server_messages(websocket, message):
                 print("Could not parse message: " + line)
         except IndexError:
             pass
-        except CantSwitchError:
-            pass
+        except InvalidMoveError:
+            print("Invalid move!")
+            print(str(match.battle.get_active_pokemon().moves))
+            raise
 
 async def string_to_action(websocket, message):
     """
@@ -97,8 +99,8 @@ async def string_to_action(websocket, message):
     global login
 
     login.update_websocket(websocket)
-    if not login.allow_new_matches:
-        exit(2)
+    #if not login.allow_new_matches:
+        #exit(2)
 
     # Handle all meta Showdown stuff related to the bot
     # Login, searching for fights, responding to PMs, etc.
@@ -148,8 +150,9 @@ async def string_to_action(websocket, message):
 
         if "battle" in string_tab[0]:
             # Battle concern message.
-            await filter_server_messages(websocket, message)
+            future = await filter_server_messages(websocket, message)
     except Exception as e:
+        print("Caught exception!")
         login.forfeit_all_matches(e)
 
 def determine_showdown_error(error_reason):
