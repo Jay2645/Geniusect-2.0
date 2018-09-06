@@ -1,17 +1,31 @@
 #!/usr/bin/env python3
 
-
-def string_to_id(name):
-
-# Taken from https://michaelgoerz.net/notes/singleton-objects-in-python.html
-
 def player_id_to_index(player_id):
-    if player_id is 'p1':
+    """
+    Gets our numerical player ID from a 'p1' or 'p2' tag.
+    """
+    if player_id == 'p1':
         return 0
-    elif player_id is 'p2':
+    elif player_id == 'p2':
         return 1
     else:
         return -1
+
+def get_enemy_id_from_player_id(player_id):
+    """
+    Like player_id_to_index, but gets the enemy's ID instead of our own.
+    """
+    player_index = player_id_to_index(player_id)
+    if player_index == 0:
+        return 1
+    elif player_index == 1:
+        return 0
+    else:
+        return -1
+
+def string_to_id(name):
+
+# Singleton class taken from https://michaelgoerz.net/notes/singleton-objects-in-python.html
 
 class Singleton(type):
     """Metaclass for singletons. Any instantiation of a Singleton class yields

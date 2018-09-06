@@ -1,7 +1,7 @@
 from math import floor
 
-from src.game_engine.pokemon import Status
-from src.game_engine.game_calcs import damage_calculation
+from src.game_engine.game_calcs import damage_calculation, Status
+from src.helpers import player_id_to_index
 
 def effi_boost(move, pkm1, pkm2):
     """
@@ -166,7 +166,7 @@ def effi_move(battle, move, pkm1, pkm2, team):
     else:
         weight = damage_calculation(battle, move, pkm1, pkm2)
     modified_weight = weight * accuracy
-    if pkm1.team is battle.bot_team and pkm1.active:
+    if pkm1.team.is_bot and pkm1.active:
         print("Assigning a weight of " + str(modified_weight) + " for " + pkm1.name + "'s " + move.name + " "+str(weight) + " plus " + str(accuracy))
     return modified_weight
 

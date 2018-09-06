@@ -1,22 +1,9 @@
 #!/usr/bin/env python3
 
 from math import floor
+from enum import Enum
+
 from src.io_process import json_loader
-
-from src.game_engine.natures import battle_natures
-from src.io_process.json_loader import get_move, get_item, get_ability
-
-class Status(Enum):
-    """
-    Status problem enumeration.
-    """
-    healthy = 0
-    poisoned = 1
-    toxic = 2
-    paralyzed = 3
-    burned = 4
-    asleep = 5
-    frozen = 6
 
 def get_typechart():
     from src.io_processs.login import Showdown

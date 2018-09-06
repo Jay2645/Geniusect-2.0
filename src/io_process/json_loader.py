@@ -107,6 +107,7 @@ def request_loader(server_json):
     output = {}
 
     objteam = team_from_json(jsonobj['side'])
+    objteam.is_bot = True
 
     active_pkm = objteam.active()
     try:
@@ -117,12 +118,24 @@ def request_loader(server_json):
     # Update our list of moves with metadata about whether they can be used
     if active_moves is not None and active_pkm is not None:
         move_data = active_moves[0]['moves']
-        for i in range(len(move_data)):
-            for j in range(len(active_pkm.moves)):
-                if active_pkm.moves[j].id == move_data[i]['id']:
-                    active_pkm.moves[i].pp = move_data[i]['pp']
-                    active_pkm.moves[i].disabled = move_data[i]['disabled']
-
+        print("Active move data: " + str(move_data))
+        for i in range(len(active_pkm.moves)):
+            found_move = False
+            for j in range(len(move_data)):
+                if active_pkm.moves[i].id == move_data[j]['id']:
+                    try:
+                        active_pkm.moves[i].disabled = move_data[j]['disabled']
+                        active_pkm.moves[i].pp = move_data[j]['pp']
+                    except KeyError:
+                        # Outrage doesn't take any PP when it's in effect
+                        pass
+                    found_move = True
+                    break
+            if not active_pkm.moves[i].disabled:
+                # If our move isn't already disabled, disable it if we can't find it
+                # Sometimes a disabled move just isn't listed in the active array.
+                active_pkm.moves[i].disabled = not found_move
+            
     output['team'] = objteam
     output['active'] = active_moves
     output['turn'] = jsonobj['rqid']
@@ -130,6 +143,10 @@ def request_loader(server_json):
         output['force_switch'] = jsonobj['forceSwitch']
     except KeyError:
         output['force_switch'] = False
+    try:
+        output['trapped'] = active_moves[0]['trapped']
+    except (KeyError, TypeError):
+        output['trapped'] = False
 
     return output
 
@@ -139,7 +156,7 @@ def team_from_json(pkm_team):
     from src.game_engine.pokemon import Pokemon
     from src.game_engine.move import Move
 
-    bot_team = Team()
+    team = Team()
     for pkm in pkm_team["pokemon"]:
         try:
             newpkm = Pokemon(pkm['details'].split(',')[0], pkm['condition'], pkm['active'],
@@ -150,11 +167,11 @@ def team_from_json(pkm_team):
                 move = Move({"id":json_move})
                 moveset.append(move)
             newpkm.load_known([pkm['baseAbility']], pkm["item"], pkm['stats'], moveset)
-            bot_team.add(newpkm)
+            team.add(newpkm)
         except IndexError:
             pass
 
-    return bot_team
+    return team
 
 def pokemon_from_json(pkm_name):
     """

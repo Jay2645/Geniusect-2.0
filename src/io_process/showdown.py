@@ -10,13 +10,15 @@ from src.io_process import senders, json_loader
 from src.io_process.match import Match
 from src.ui.user_interface import UserInterface
 
-challenge_mode = 1
-challenge_player = "EnglishMobster"
 avatar = 117
 
 def shutdown_showdown():
+    print("Shutting down Pokemon Showdown!")
     showdown = Showdown()
-    showdown.forfeit_all_matches()
+    if showdown.forfeit_exception is None:
+        showdown.forfeit_all_matches()
+    else:
+        raise showdown.forfeit_exception
 
 async def create_websocket():
     global should_shutdown
@@ -29,6 +31,7 @@ async def create_websocket():
                 message = await websocket.recv()
                 log_file.write("\nLog: " + message)
                 await string_to_action(websocket, message)
+
 
 @singleton_object
 class Showdown(metaclass=Singleton):
@@ -49,8 +52,6 @@ class Showdown(metaclass=Singleton):
             self.password = logfile.readline()[:-1]
         self.websocket = None
         self.battles = []
-        self.challenge_mode = challenge_mode
-        self.challenge_player = challenge_player
         self.forfeit_exception = None
         self.allow_new_matches = True
         self.formats = [
@@ -97,10 +98,18 @@ class Showdown(metaclass=Singleton):
 
     async def search_for_fights(self):
         # Once we are connected.
-        if self.challenge_mode == 1:
-            await senders.challenge(self.websocket, self.challenge_player, self.formats[0])
-        elif self.challenge_mode == 2:
-            await senders.searching(self.websocket, self.formats[0])
+        
+        ui = UserInterface()
+        challenge_mode = ui.get_selected_challenge_mode()
+
+        challenge_format = self.formats[0]
+        if challenge_mode == 1:
+            challenge_player = ui.get_challenger_name()
+            print("Challenging " + challenge_player + " using " + challenge_format)
+            await senders.challenge(self.websocket, challenge_player, self.formats[0])
+        elif challenge_mode == 2:
+            print("Searching for a match on the " + challenge_format + " ladder.")
+            await senders.searching(self.websocket, challenge_format)
 
     def check_battle(self, battle_id) -> Match or None:
         """
@@ -120,6 +129,7 @@ class Showdown(metaclass=Singleton):
         print("Starting new battle!")
 
         battle = Match(battle_id)
+        battle.open_match_window()
         self.battles.append(battle)
         await senders.start_timer(self.websocket, battle.battle_id)
 
@@ -133,29 +143,36 @@ class Showdown(metaclass=Singleton):
             await senders.leaving(self.websocket, battle.battle_id)
         else:
             await senders.sendmessage(self.websocket, battle.battle_id, "Oops, I crashed! Exception data: " + str(self.forfeit_exception) + ". You win!")
-            import traceback
-            traceback.print_tb(self.forfeit_exception.__traceback__)
         
         self.battles.remove(battle)
+        if self.forfeit_exception is None:
+            ui = UserInterface()
+            ui.match_over(battle.battle_id)
         await senders.leaving(self.websocket, battle.battle_id)
 
     def forfeit_all_matches(self, exception=None):
+        if self.forfeit_exception is not None:
+            return
+        
+        print("Exiting everything")
         self.forfeit_exception = exception
         self.allow_new_matches = False
-        asyncio.get_event_loop().create_task(self.__forfeit__())
 
+        ui = UserInterface()
+        ui.raise_error(self.forfeit_exception)
+        #ui.close_windows()
+        
+        for battle in self.battles:
+            asyncio.get_event_loop().create_task(self.forfeit(battle))
+        
+        
     async def forfeit(self, battle):
         print("Forfeiting battle " + battle.battle_id + "!")
         await senders.forfeit_match(self.websocket, battle.battle_id)
         await self.game_over(battle)
-        
-    async def __forfeit__(self):
-        print("Forfeiting the game!")
-        for battle in self.battles:
-            await self.forfeit(battle)
-        if self.forfeit_exception is not None:
-            raise self.forfeit_exception
 
     def log_out(self):
+        ui = UserInterface()
+        ui.close_windows()
         print("Logging out.")
-        exit(0)
+        #exit(0)

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from src.game_engine.battle import Battle
+from src.helpers import player_id_to_index, get_enemy_id_from_player_id
 
 
 def major_actions(battle: Battle, split_line):
@@ -30,37 +31,40 @@ def major_actions(battle: Battle, split_line):
 
 
 def minor_actions(battle: Battle, split_line):
+    bot_team = battle.teams[player_id_to_index(battle.player_id)]
+    enemy_team = battle.teams[get_enemy_id_from_player_id(battle.player_id)]
+
     if split_line[0] == "-fail":
         pass
     elif split_line[0] == "-damage":
         if battle.player_id in split_line[1]:
-            battle.bot_team.active().update_health(split_line[2])
+            bot_team.active().update_health(split_line[2])
         else:
-            battle.enemy_team.active().update_health(split_line[2])
+            enemy_team.active().update_health(split_line[2])
     elif split_line[0] == "-heal":
         pass
     elif split_line[0] == "-status":
         if battle.player_id in split_line[1]:
-            battle.update_status(battle.bot_team.active(), split_line[2])
+            battle.update_status(bot_team.active(), split_line[2])
         else:
-            battle.update_status(battle.enemy_team.active(), split_line[2])
+            battle.update_status(enemy_team.active(), split_line[2])
     elif split_line[0] == "-curestatus":
         if battle.player_id in split_line[1]:
-            battle.update_status(battle.bot_team.active())
+            battle.update_status(bot_team.active())
         else:
-            battle.update_status(battle.enemy_team.active())
+            battle.update_status(enemy_team.active())
     elif split_line[0] == "-cureteam":
         pass
     elif split_line[0] == "-boost":
         if battle.player_id in split_line[1]:
-            battle.set_buff(battle.bot_team.active(), split_line[2], int(split_line[3]))
+            battle.set_buff(bot_team.active(), split_line[2], int(split_line[3]))
         else:
-            battle.set_buff(battle.enemy_team.active(), split_line[2], int(split_line[3]))
+            battle.set_buff(enemy_team.active(), split_line[2], int(split_line[3]))
     elif split_line[0] == "-unboost":
         if battle.player_id in split_line[1]:
-            battle.set_buff(battle.bot_team.active(), split_line[2], - int(split_line[3]))
+            battle.set_buff(bot_team.active(), split_line[2], - int(split_line[3]))
         else:
-            battle.set_buff(battle.enemy_team.active(), split_line[2], - int(split_line[3]))
+            battle.set_buff(enemy_team.active(), split_line[2], - int(split_line[3]))
     elif split_line[0] == "-weather":
         pass
     elif split_line[0] == "-fieldstart":
@@ -70,81 +74,81 @@ def minor_actions(battle: Battle, split_line):
     elif split_line[0] == "-sidestart":
         if "Reflect" in split_line[2]:
             if battle.player_id in split_line[1]:
-                battle.bot_team.reflect = True
+                bot_team.reflect = True
             else:
-                battle.enemy_team.reflect = True
+                enemy_team.reflect = True
         elif "Light Screen" in split_line[2]:
             if battle.player_id in split_line[1]:
-                battle.bot_team.light_screen = True
+                bot_team.light_screen = True
             else:
-                battle.enemy_team.light_screen = True
+                enemy_team.light_screen = True
         elif "Stealth Rock" in split_line[2]:
             if battle.player_id in split_line[1]:
-                battle.bot_team.entry_hazards["stealth_rock"] = 1
+                bot_team.entry_hazards["stealth_rock"] = 1
                 print("Sneaky pebbles surround our team!")
             else:
-                battle.enemy_team.entry_hazards["stealth_rock"] = 1
+                enemy_team.entry_hazards["stealth_rock"] = 1
                 print("Sneaky pebbles surround the enemy team!")
         elif "Toxic Spikes" in split_line[2]:
             if battle.player_id in split_line[1]:
-                battle.bot_team.entry_hazards["toxic_spikes"] += 1
-                print(str(battle.bot_team.entry_hazards["toxic_spikes"]) + " layers of Toxic Spikes have been added to our side!")
+                bot_team.entry_hazards["toxic_spikes"] += 1
+                print(str(bot_team.entry_hazards["toxic_spikes"]) + " layers of Toxic Spikes have been added to our side!")
             else:
-                battle.enemy_team.entry_hazards["toxic_spikes"] += 1
-                print(str(battle.enemy_team.entry_hazards["toxic_spikes"]) + " layers of Toxic Spikes have been added to the enemy side!")
+                enemy_team.entry_hazards["toxic_spikes"] += 1
+                print(str(enemy_team.entry_hazards["toxic_spikes"]) + " layers of Toxic Spikes have been added to the enemy side!")
         elif "Spikes" in split_line[2]:
             if battle.player_id in split_line[1]:
-                battle.bot_team.entry_hazards["spikes"] += 1
-                print(str(battle.bot_team.entry_hazards["spikes"]) + " layers of Spikes have been added to our side!")
+                bot_team.entry_hazards["spikes"] += 1
+                print(str(bot_team.entry_hazards["spikes"]) + " layers of Spikes have been added to our side!")
             else:
-                battle.enemy_team.entry_hazards["spikes"] += 1
-                print(str(battle.enemy_team.entry_hazards["spikes"]) + " layers of Spikes have been added to the enemy side!")
+                enemy_team.entry_hazards["spikes"] += 1
+                print(str(enemy_team.entry_hazards["spikes"]) + " layers of Spikes have been added to the enemy side!")
         elif "Sticky Web" in split_line[2]:
             if battle.player_id in split_line[1]:
-                battle.bot_team.entry_hazards["sticky_web"] = 1
+                bot_team.entry_hazards["sticky_web"] = 1
                 print("Sticky Web has been added to our side!")
             else:
-                battle.enemy_team.entry_hazards["sticky_web"] = 1
+                enemy_team.entry_hazards["sticky_web"] = 1
                 print("Sticky Web has been added to the enemy side!")
 
     elif split_line[0] == "-sideend":
         if "Reflect" in split_line[2]:
             if battle.player_id in split_line[1]:
-                battle.bot_team.reflect = False
+                bot_team.reflect = False
             else:
-                battle.enemy_team.reflect = False
+                enemy_team.reflect = False
         elif "Light Screen" in split_line[2]:
             if battle.player_id in split_line[1]:
-                battle.bot_team.light_screen = False
+                bot_team.light_screen = False
             else:
-                battle.enemy_team.light_screen = False
+                enemy_team.light_screen = False
         elif "Stealth Rock" in split_line[2]:
             if battle.player_id in split_line[1]:
-                battle.bot_team.entry_hazards["stealth_rock"] = 0
+                bot_team.entry_hazards["stealth_rock"] = 0
                 print("Sneaky pebbles are gone from our team!")
             else:
-                battle.enemy_team.entry_hazards["stealth_rock"] = 0
+                enemy_team.entry_hazards["stealth_rock"] = 0
                 print("Sneaky pebbles are gone from the enemy team!")
         elif "Toxic Spikes" in split_line[2]:
             if battle.player_id in split_line[1]:
-                battle.bot_team.entry_hazards["toxic_spikes"] = 0
+                bot_team.entry_hazards["toxic_spikes"] = 0
                 print("Toxic Spikes have been removed from our side!")
             else:
-                battle.enemy_team.entry_hazards["toxic_spikes"] = 0
+                enemy_team.entry_hazards["toxic_spikes"] = 0
                 print("Toxic Spikes have been removed from the enemy side!")
         elif "Spikes" in split_line[2]:
             if battle.player_id in split_line[1]:
-                battle.bot_team.entry_hazards["spikes"] = 0
+                bot_team.entry_hazards["spikes"] = 0
                 print("Spikes have been removed from our side!")
             else:
-                battle.enemy_team.entry_hazards["spikes"] = 0
+                enemy_team.entry_hazards["spikes"] = 0
                 print("Spikes have been removed from the enemy side!")
         elif "Sticky Web" in split_line[2]:
             if battle.player_id in split_line[1]:
-                battle.bot_team.entry_hazards["sticky_web"] = 0
+                bot_team.entry_hazards["sticky_web"] = 0
                 print("Sticky Web has been removed from our side!")
             else:
-                battle.enemy_team.entry_hazards["sticky_web"] = 0
+                enemy_team.entry_hazards["sticky_web"] = 0
                 print("Sticky Web has been removed from the enemy side!")
     elif split_line[0] == "-crit":
         pass
@@ -156,14 +160,14 @@ def minor_actions(battle: Battle, split_line):
         pass
     elif split_line[0] == "-item":
         if battle.player_id in split_line[1]:
-            battle.bot_team.active().item = split_line[2].lower().replace(" ", "")
+            bot_team.active().item = split_line[2].lower().replace(" ", "")
         else:
-            battle.enemy_team.active().item = split_line[2].lower().replace(" ", "")
+            enemy_team.active().item = split_line[2].lower().replace(" ", "")
     elif split_line[0] == "-enditem":
         if battle.player_id not in split_line[1]:
-            battle.bot_team.active().item = None
+            bot_team.active().item = None
         else:
-            battle.enemy_team.active().item = None
+            enemy_team.active().item = None
     elif split_line[0] == "-ability":
         pass
     elif split_line[0] == "-endability":
@@ -183,16 +187,16 @@ def minor_actions(battle: Battle, split_line):
     elif split_line[0] == "-start":
         if split_line[2].lower() == "substitute":
             if battle.player_id in split_line[1]:
-                battle.bot_team.active().substitute = True
+                bot_team.active().substitute = True
             else:
-                battle.enemy_team.active().substitute = True
+                enemy_team.active().substitute = True
         pass
     elif split_line[0] == "-end":
         if split_line[2].lower() == "substitute":
             if battle.player_id in split_line[1]:
-                battle.bot_team.active().substitute = False
+                bot_team.active().substitute = False
             else:
-                battle.enemy_team.active().substitute = False
+                enemy_team.active().substitute = False
         pass
     else:
         print("Could not process minor action:" + str(split_line))

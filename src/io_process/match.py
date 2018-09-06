@@ -1,9 +1,23 @@
+#!/usr/bin/env python3
+
 from src.io_process.senders import sendmessage
 from src.io_process.json_loader import request_loader
 from src.game_engine.battle import Battle
 from src.helpers import player_id_to_index
+from src.ui.user_interface import UserInterface
 
 class Match:
+    """
+    This represents an actual match window in Pokemon Showdown.
+    This references the Battle instance, the current tier 
+    (OU, UU, Random Battle, etc.), how much time is left on this
+    current turn, etc.
+    
+    This doesn't handle anything on-cartridge in a Pokemon game;
+    that should all be handled by the Battle class. This only
+    handles Smogon/Showdown-specific rules that aren't on a cartidge.
+    """
+
     def __init__(self, match_id):
         self.battle_id = match_id
         self.battle = Battle(match_id)
@@ -26,7 +40,8 @@ class Match:
         self.turn = 0
         self.turn_timer = 0
         self.tier = ""
-
+        self.match_window = None
+        
     def set_player_name(self, player_id, player_name):
         from src.io_process.showdown import Showdown
         login = Showdown()
@@ -36,6 +51,7 @@ class Match:
         self.sides[player_index]['name'] = player_name
         self.sides[player_index]['showdown_id'] = player_id
         self.sides[player_index]['is_bot'] = is_us
+        self.sides[player_index]['index'] = player_id
 
         self.battle.update_player(self.sides[player_index], player_index)
 
@@ -44,6 +60,8 @@ class Match:
         self.sides[player_index]['team_size'] = team_size
 
         self.battle.update_player(self.sides[player_index], player_index)
+        if self.match_window != None:
+            self.match_window.update_teams(self.battle.teams)
 
     def set_generation(self, generation):
         self.gen = int(generation)
@@ -72,10 +90,14 @@ class Match:
 
     async def cant_take_action(self, disabled_action):
         self.battle.cant_take_action(disabled_action)
-        await self.battle.new(turn(self.turn))
+        await self.battle.new_turn(self.turn)
 
     async def must_make_move(self, websocket):
         await self.battle.make_move(websocket)
+
+    def open_match_window(self):
+        ui = UserInterface()
+        ui.make_new_match(self)
 
     async def game_is_over(self, websocket, winner_name):
         from src.io_process.showdown import Showdown
