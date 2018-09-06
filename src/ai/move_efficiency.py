@@ -1,7 +1,6 @@
 from math import floor
 
-from src.game_engine.pokemon import Status
-from src.game_engine.game_calcs import damage_calculation
+from src.game_engine.game_calcs import damage_calculation, Status
 from src.helpers import player_id_to_index
 
 def effi_boost(move, pkm1, pkm2):

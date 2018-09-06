@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from src.io_process.senders import sendmessage
 from src.io_process.json_loader import request_loader
 from src.game_engine.battle import Battle
@@ -5,6 +7,17 @@ from src.helpers import player_id_to_index
 from src.ui.user_interface import UserInterface
 
 class Match:
+    """
+    This represents an actual match window in Pokemon Showdown.
+    This references the Battle instance, the current tier 
+    (OU, UU, Random Battle, etc.), how much time is left on this
+    current turn, etc.
+    
+    This doesn't handle anything on-cartridge in a Pokemon game;
+    that should all be handled by the Battle class. This only
+    handles Smogon/Showdown-specific rules that aren't on a cartidge.
+    """
+
     def __init__(self, match_id):
         self.battle_id = match_id
         self.battle = Battle(match_id)

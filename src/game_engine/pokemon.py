@@ -1,20 +1,7 @@
-from enum import Enum
+#!/usr/bin/env python3
 
 from src.io_process import json_loader
-from src.game_engine.game_calcs import stat_calculation
-
-class Status(Enum):
-    """
-    Status problem enumeration.
-    """
-    healthy = 0
-    poisoned = 1
-    toxic = 2
-    paralyzed = 3
-    burned = 4
-    asleep = 5
-    frozen = 6
-    fainted = 7
+from src.game_engine.game_calcs import stat_calculation, Status
 
 class Pokemon:
     """

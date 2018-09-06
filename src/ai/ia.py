@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from src.ai.move_efficiency import effi_move, effi_boost, effi_pkm
 from src.game_engine.game_calcs import type_damage_calculation
 from src.helpers import player_id_to_index, get_enemy_id_from_player_id

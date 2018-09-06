@@ -1,9 +1,16 @@
 #!/usr/bin/env python3
 
+from enum import Flag, auto
+
 from src.game_engine.effects import Entity
 from src.io_process import json_loader
 
+
 class Move(Entity):
+    """
+    Represents data representing an individual move.
+    """
+
     def __init__(self, move_json):
         # Example move object:
         # {
@@ -214,7 +221,5 @@ class Move(Entity):
         output = self.name
         if self.disabled:
             output += " (Disabled)"
-        else:
-            output += " (Enabled)"
         output += "\n" + str(self.pp) + "/" + str(self.max_pp) + " PP"
         return output

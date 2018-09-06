@@ -85,6 +85,9 @@ async def filter_server_messages(websocket, message):
             print("Invalid move!")
             print(str(match.battle.get_active_pokemon().moves))
             raise
+        except CantSwitchError:
+            # We get a callback telling us we can't switch
+            pass
 
 async def string_to_action(websocket, message):
     """

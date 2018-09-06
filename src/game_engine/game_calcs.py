@@ -1,5 +1,23 @@
+#!/usr/bin/env python3
+
 from math import floor
+from enum import Enum
+
 from src.io_process import json_loader
+
+class Status(Enum):
+    """
+    Status problem enumeration.
+    """
+    none = -1
+    healthy = 0
+    poisoned = 1
+    toxic = 2
+    paralyzed = 3
+    burned = 4
+    asleep = 5
+    frozen = 6
+    fainted = 7
 
 def stat_calculation(base, level, ev):
     """

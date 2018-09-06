@@ -1,9 +1,12 @@
+#!/usr/bin/env python3
+
 import re
 import json
 from json import JSONDecodeError
 
 from src.ai.ia import make_best_action, make_best_switch, make_best_move, make_best_order
-from src.game_engine.pokemon import Pokemon, Status
+from src.game_engine.pokemon import Pokemon
+from src.game_engine.game_calcs import Status
 from src.game_engine.team import Team
 from src.io_process import senders
 from src.errors import ShowdownError
@@ -12,9 +15,9 @@ from src.helpers import player_id_to_index, get_enemy_id_from_player_id
 
 class Battle:
     """
-    Battle class.
-    Unique for each battle.
-    Handle everything concerning it.
+    Battle class. This holds references to both teams.
+    It also holds references to things which affect both teams, like weather effects
+    and what turn it is.
     """
     def __init__(self, battle_id):
         """
