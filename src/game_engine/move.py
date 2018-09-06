@@ -6,6 +6,56 @@ from src.game_engine.effects import Entity
 from src.io_process import json_loader
 
 
+class MoveFlag(Flag):
+    """
+    Various flags that can be set on a Move object.
+    """
+
+    none = 0
+    # Ignores a target's substitute.
+    authentic = auto()
+    # Power is multiplied by 1.5 when used by a Pokemon with the Ability Strong Jaw.
+    bite = auto()
+    # Has no effect on Pokemon with the Ability Bulletproof.
+    bullet = auto()
+    # The user is unable to make a move between turns.
+    charge = auto()
+    # Makes contact.
+    contact = auto()
+    # When used by a Pokemon, other Pokemon with the Ability Dancer can attempt to execute the same move.
+    dance = auto()
+    # Thaws the user if executed successfully while the user is frozen.
+    defrost = auto()
+    # Can target a Pokemon positioned anywhere in a Triple Battle.
+    distance = auto()
+    # Prevented from being executed or selected during Gravity's effect.
+    gravity = auto()
+    # Prevented from being executed or selected during Heal Block's effect.
+    heal = auto()
+    # Can be copied by Mirror Move.
+    mirror = auto()
+    # Unknown effect.
+    mystery = auto()
+    # Prevented from being executed or selected in a Sky Battle.
+    nonsky = auto()
+    # Has no effect on Grass-type Pokemon, Pokemon with the Ability Overcoat, and Pokemon holding Safety Goggles.
+    powder = auto()
+    # Blocked by Detect, Protect, Spiky Shield, and if not a Status move, King's Shield.
+    protect = auto()
+    # Power is multiplied by 1.5 when used by a Pokemon with the Ability Mega Launcher.
+    pulse = auto()
+    #  Power is multiplied by 1.2 when used by a Pokemon with the Ability Iron Fist.
+    punch = auto()
+    # If this move is successful, the user must recharge on the following turn and cannot make a move.
+    recharge = auto()
+    # Bounced back to the original user by Magic Coat or the Ability Magic Bounce.
+    reflectable = auto()
+    # Can be stolen from the original user and instead used by another Pokemon using Snatch.
+    snatch = auto()
+    # Has no effect on Pokemon with the Ability Soundproof.
+    sound = auto()
+
+
 class Move(Entity):
     """
     Represents data representing an individual move.
@@ -47,6 +97,16 @@ class Move(Entity):
 
     def from_json(self, movedex):
         super().from_json(movedex)
+
+        try:
+            our_flags = movedex['flags']
+            self.flags = MoveFlag.none
+            for flag in our_flags:
+                # Add the flag to our list of flags
+                # Python is so magical <3
+                self.flags = self.flags | MoveFlag[flag]
+        except KeyError:
+            pass
 
         try:
             self.pp = movedex['pp']
