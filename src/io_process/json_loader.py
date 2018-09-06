@@ -116,7 +116,6 @@ def request_loader(server_json):
         active_moves = None
 
     # Update our list of moves with metadata about whether they can be used
-    print("Updating active moves!")
     if active_moves is not None and active_pkm is not None:
         move_data = active_moves[0]['moves']
         print("Active move data: " + str(move_data))
