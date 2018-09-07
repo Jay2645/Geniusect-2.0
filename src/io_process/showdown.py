@@ -132,6 +132,7 @@ class Showdown(metaclass=Singleton):
         battle.open_match_window()
         self.battles.append(battle)
         await senders.start_timer(self.websocket, battle.battle_id)
+        return battle
 
     async def game_over(self, battle):
         if battle is None:

@@ -20,7 +20,7 @@ class Match:
 
     def __init__(self, match_id):
         self.battle_id = match_id
-        self.battle = Battle(match_id)
+        self.battle = Battle({"id":match_id, "name":match_id})
         self.rules = []
         self.sides = [
             {
@@ -41,6 +41,7 @@ class Match:
         self.turn_timer = 0
         self.tier = ""
         self.match_window = None
+        print("Created match.")
         
     def set_player_name(self, player_id, player_name):
         from src.io_process.showdown import Showdown
@@ -63,8 +64,13 @@ class Match:
         if self.match_window != None:
             self.match_window.update_teams(self.battle.teams)
 
+    def set_title(self, title):
+        self.battle.name = title
+        self.battle.full_name = self.battle.name + ": " + self.battle.id
+
     def set_generation(self, generation):
         self.gen = int(generation)
+        self.battle.gen = self.gen
 
     def set_tier(self, tier):
         self.tier = tier

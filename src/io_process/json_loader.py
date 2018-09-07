@@ -154,13 +154,11 @@ def request_loader(server_json, battle):
 
         
 def team_from_json(pkm_team, battle):
-    print("Grabbing team from JSON: " + str(pkm_team))
     from src.game_engine.team import Team
     from src.game_engine.pokemon import Pokemon
     from src.game_engine.move import Move
 
     team = Team(battle)
-    print("Created new team")
     for pkm in pkm_team["pokemon"]:
         try:
             newpkm = Pokemon(battle, pkm['details'].split(',')[0], pkm['condition'], pkm['active'],

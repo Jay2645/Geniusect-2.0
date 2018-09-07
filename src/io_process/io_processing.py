@@ -28,7 +28,7 @@ async def filter_server_messages(websocket, message):
             current = line.split('|')
             if current[1] == "init":
                 # Creation of the battle
-                await login.create_battle(battle_id)
+                match = await login.create_battle(battle_id)
             elif current[1] == "error":
                 # Showdown had an error of some kind
                 determine_showdown_error(current[2])
@@ -56,18 +56,27 @@ async def filter_server_messages(websocket, message):
             elif current[1] == "win":
                 # Someone won the game!
                 await match.game_is_over(websocket, current[2])
-            elif current[1] == "inactive" and match is not None:
-                print(current[2])
-                match.set_turn_timer(''.join(c for c in current[2] if c.isdigit()))
+            elif current[1] == "inactive":
+                if match is not None:
+                    match.set_turn_timer(''.join(c for c in current[2] if c.isdigit()))
             elif current[1] == "j" and match is not None:
                 # User joined
                 if login.username.lower() not in current[2].lower():
                     await match.new_player_joined(websocket, current[2])
+            elif current[1] == "title" and match is not None:
+                # Match title
+                match.set_title(current[2])
             elif current[1] == "l":
                 # User left
                 pass
             elif current[1] == "c":
                 # User made a comment
+                pass
+            elif current[1] == "upkeep":
+                # Just keeping the connection active
+                pass
+            elif current[1] == "deinit":
+                # Leaving the room
                 pass
             elif match is not None:
                 # Send to battlelog parser.

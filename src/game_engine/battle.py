@@ -20,17 +20,16 @@ class Battle(Entity):
     It also holds references to things which affect both teams, like weather effects
     and what turn it is.
     """
-    def __init__(self, battle_id):
+    def __init__(self, battle_object):
         """
         init Battle method.
-        :param battle_id: String, battle_id of battle.
+        :param battle_object: Dict, containing the Entity JSON for this battle.
         """
-        super().__init__({"id":battle_id, "name":battle_id})
+        super().__init__(battle_object)
 
         self.teams = [Team(self), Team(self)]
         self.current_pkm = None
         self.turn = 0
-        self.battle_id = battle_id
         self.player_id = ""
         self.pseudo_weather = []
 
@@ -46,7 +45,7 @@ class Battle(Entity):
         self.turn = team_details['turn']
 
         ui = UserInterface()
-        ui.update_team_ui(self.battle_id, self.teams)
+        ui.update_team_ui(self.id, self.teams)
 
         if team_details['force_switch']:
             login = Showdown()
@@ -94,7 +93,7 @@ class Battle(Entity):
                     pkm.active = False
         
         ui = UserInterface()
-        ui.update_team_ui(self.battle_id, self.teams)
+        ui.update_team_ui(self.id, self.teams)
 
     def update_player(self, player_data, player_index):
         if player_data['is_bot']:
@@ -163,8 +162,8 @@ class Battle(Entity):
         """
         print("Making team order")
 
-        order = "".join([str(x[0]) for x in make_best_order(self, self.battle_id.split('-')[1])])
-        await senders.sendmessage(websocket, self.battle_id, "/team " + order + "|" + str(self.turn))
+        order = "".join([str(x[0]) for x in make_best_order(self, self.id.split('-')[1])])
+        await senders.sendmessage(websocket, self.id, "/team " + order + "|" + str(self.turn))
 
     async def make_move(self, websocket, best_move=None):
         """
@@ -185,12 +184,12 @@ class Battle(Entity):
         print(plan_text)
         from src.ui.user_interface import UserInterface
         ui = UserInterface()
-        ui.update_plan(self.battle_id, plan_text)
+        ui.update_plan(self.id, plan_text)
 
         best_move_string = str(best_move[0])
         if "canMegaEvo" in self.current_pkm[0]:
             best_move_string = str(best_move[0]) + " mega"
-        await senders.sendmove(websocket, self.battle_id, best_move_string, self.turn)
+        await senders.sendmove(websocket, self.id, best_move_string, self.turn)
 
     async def make_switch(self, websocket, best_switch = None, force_switch = False):
         """
@@ -210,9 +209,9 @@ class Battle(Entity):
         print(plan_text)
         from src.ui.user_interface import UserInterface
         ui = UserInterface()
-        ui.update_plan(self.battle_id, plan_text)
+        ui.update_plan(self.id, plan_text)
 
-        await senders.sendswitch(websocket, self.battle_id, best_switch, self.turn)
+        await senders.sendswitch(websocket, self.id, best_switch, self.turn)
 
     async def make_action(self, websocket):
         """

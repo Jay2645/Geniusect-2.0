@@ -160,14 +160,16 @@ def effi_move(battle, move, pkm1, pkm2, team):
         weight = entry_hazard_removal_status(move, team)
         if move.id == "rapidspin":
             # Rapid Spin doesn't affect Ghost Types
-            weight *= damage_calculation(battle, move, pkm1, pkm2)
+            damage = get_damage(battle, pkm1, pkm2, move)
+            if damage is not None:
+                weight *= damage
     elif move.id in non_volatile_status_moves and pkm2.status == Status.healthy:
         weight = effi_status(move, pkm1, pkm2, team)
     else:
         weight = get_damage(battle, pkm1, pkm2, move)
         if weight is None:
             weight = 0
-    print(move.id + "'s weight: " + str(weight) + "; accuracy: " + str(accuracy))
+
     modified_weight = weight * accuracy
     if pkm1.team.is_bot and pkm1.active:
         print("Assigning a weight of " + str(modified_weight) + " for " + pkm1.name + "'s " + move.name + " "+str(weight) + " plus " + str(accuracy))
