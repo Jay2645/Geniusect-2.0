@@ -66,6 +66,8 @@ async def filter_server_messages(websocket, message):
             elif current[1] == "title" and match is not None:
                 # Match title
                 match.set_title(current[2])
+            elif current[1] == "rule":
+                match.add_rule(current[2])
             elif current[1] == "l":
                 # User left
                 pass

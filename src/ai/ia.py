@@ -38,6 +38,9 @@ def make_best_switch(battle, force_switch):
     :param battle: Battle object, current battle.
     :return: (Index of pokemon in bot_team (Integer, [-1, 6]), efficiency (Integer, [0, +oo[))
     """
+    if battle.is_trapped:
+        return None, -1024
+
     print("Looking at our best options to switch")
     team = battle.teams[player_id_to_index(battle.player_id)]
     enemy_pkm = battle.teams[get_enemy_id_from_player_id(battle.player_id)].active()
@@ -82,7 +85,7 @@ def make_best_switch(battle, force_switch):
     try:
         return team.pokemon.index(best_pkm) + 1, effi
     except ValueError:
-        return -1, -1024
+        return None, -1024
 
 
 def make_best_move(battle):
@@ -91,6 +94,9 @@ def make_best_move(battle):
     :param battle: Battle object, current battle.
     :return: (Index of move in pokemon (Integer, [-1, 4]), efficiency (Integer, [0, +oo[))
     """
+    if battle.force_switch:
+        return None, -1024
+
     pokemon_moves = battle.current_pkm[0]["moves"]
 
     pokemon = battle.teams[player_id_to_index(battle.player_id)].active()
@@ -133,15 +139,15 @@ def make_best_action(battle):
         raise RuntimeError("We have no active Pokemon")
     elif enm_pkm is None:
         raise RuntimeError("Cannot find any active enemy Pokemon")
-
-    print("Our Pokemon: " + str(bot_pkm))
-    print("Enemy Pokemon: " + str(enm_pkm))
     
-    # Check our valid moves
-    best_move = make_best_move(battle)
+    if not battle.force_switch:
+        # Check our valid moves
+        best_move = make_best_move(battle)
+    else:
+        best_move = (None, -1024)
 
     # If we don't have a substitute active, look at our options for switching
-    if not bot_pkm.substitute:
+    if (best_move is None or not bot_pkm.substitute) and not battle.is_trapped:
         best_switch = make_best_switch(battle, False)    
         if battle.current_pkm is None or best_move[0] is None or best_move[1] < best_switch[1]:
             return "switch", best_switch[0]

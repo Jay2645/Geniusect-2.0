@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
-from src.io_process.senders import sendmessage
+from src.ai.ia import make_best_action, make_best_switch, make_best_move, make_best_order
+
+from src.io_process import senders
 from src.io_process.json_loader import request_loader
+
 from src.game_engine.battle import Battle
 from src.helpers import player_id_to_index
 from src.ui.user_interface import UserInterface
@@ -20,7 +23,7 @@ class Match:
 
     def __init__(self, match_id):
         self.battle_id = match_id
-        self.battle = Battle({"id":match_id, "name":match_id})
+        self.battle = Battle(self, {"id":match_id, "name":match_id})
         self.rules = []
         self.sides = [
             {
@@ -75,24 +78,121 @@ class Match:
     def set_tier(self, tier):
         self.tier = tier
 
+    def add_rule(self, rule):
+        self.rules.append(rule)
+
     async def recieved_request(self, request):
         if request == "":
             return
         team_details = request_loader(request, self.battle)
-        await self.battle.update_us(team_details)
+        self.battle.update_us(team_details)
+        if self.battle.force_switch:
+            from src.io_process.showdown import Showdown
+            login = Showdown()
+            websocket = login.websocket
+            await self.make_switch(websocket)
+        elif self.battle.is_trapped:
+            from src.io_process.showdown import Showdown
+            login = Showdown()
+            websocket = login.websocket
+            await self.make_move(websocket)
 
     async def new_turn(self, turn_number):
         self.turn = int(turn_number)
-        await self.battle.new_turn(self.turn)
+        print("Beginning turn " + str(turn_number))
+
+        from src.io_process.showdown import Showdown
+        login = Showdown()
+        websocket = login.websocket
+        await self.make_action(websocket)
 
     async def new_player_joined(self, websocket, username):
-        await sendmessage(websocket, self.battle_id, "Hi, " + username + "! I'm a bot! I'm probably going to crash and forfeit at some point, so be nice!")
+        await senders.sendmessage(websocket, self.battle_id, "Hi, " + username + "! I'm a bot! I'm probably going to crash and forfeit at some point, so be nice!")
 
     def set_turn_timer(self, turn_amount):
         try:
             self.turn_timer = int(turn_amount)
         except ValueError:
             pass
+
+    async def make_team_order(self, websocket):
+        """
+        Call function to correctly choose the first pokemon to send.
+        :param websocket: Websocket stream.
+        """
+        print("Making team order")
+
+        order = "".join([str(x[0]) for x in make_best_order(self, self.id.split('-')[1])])
+        await senders.sendmessage(websocket, self.battle.id, "/team " + order + "|" + str(self.battle.turn))
+
+    async def make_move(self, websocket, best_move=None):
+        """
+        Call function to send move and use the sendmove sender.
+        :param websocket: Websocket stream.
+        :param best_move: [int, int] : [id of best move, value].
+        """
+        if self.battle.force_switch:
+            await self.make_switch(websocket)
+            return
+
+        if not best_move:
+            best_move = make_best_move(self.battle)
+
+        pokemon = self.battle.teams[player_id_to_index(self.battle.player_id)].active()
+        plan_text = ""
+        if best_move[1] == 1024:
+            plan_text = "Using locked-in move!"
+        else:
+            plan_text = "Using move " + str(pokemon.moves[best_move[0] - 1].name)
+
+        print(plan_text)
+        ui = UserInterface()
+        ui.update_plan(self.battle_id, plan_text)
+
+        best_move_string = str(best_move[0])
+        if "canMegaEvo" in self.battle.current_pkm[0]:
+            best_move_string = str(best_move[0]) + " mega"
+        await senders.sendmove(websocket, self.battle_id, best_move_string, self.battle.turn)
+
+    async def make_switch(self, websocket, best_switch = None, force_switch = False):
+        """
+        Call function to send switch and use the sendswitch sender.
+        :param websocket: Websocket stream.
+        :param best_switch: int, id of pokemon to switch.
+        """
+        if self.battle.is_trapped:
+            await self.make_move(websocket)
+            return
+
+        if not best_switch:
+            best_switch = make_best_switch(self.battle, force_switch)[0]
+
+        plan_text = ""
+
+        if best_switch >= 0:
+            plan_text = "Making a switch to " + self.battle.teams[player_id_to_index(self.battle.player_id)].pokemon[best_switch - 1].name
+        else:
+            raise RuntimeError("Could not determine a Pokemon to switch to.")
+        
+        print(plan_text)
+
+        from src.ui.user_interface import UserInterface
+        ui = UserInterface()
+        ui.update_plan(self.battle_id, plan_text)
+
+        await senders.sendswitch(websocket, self.battle_id, best_switch, self.battle.turn)
+
+    async def make_action(self, websocket):
+        """
+        Launch best action chooser and call corresponding functions.
+        :param websocket: Websocket stream.
+        """
+        action = make_best_action(self.battle)
+        if action[0] == "move":
+            await self.make_move(websocket, action[1:])
+        if action[0] == "switch":
+            await self.make_switch(websocket, action[1])
+
 
     async def cant_take_action(self, disabled_action):
         self.battle.cant_take_action(disabled_action)
@@ -113,5 +213,5 @@ class Match:
         else:
             login.losses += 1
 
-        await sendmessage(websocket, self.battle_id, "Well played! So far this session, my win:loss ratio has been: " + str(login.wins) + ":" + str(login.losses) + ".")
+        await senders.sendmessage(websocket, self.battle_id, "Well played! So far this session, my win:loss ratio has been: " + str(login.wins) + ":" + str(login.losses) + ".")
         await login.game_over(self)

@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
 
 import re
-import json
 
-from json import JSONDecodeError
 
-from src.ai.ia import make_best_action, make_best_switch, make_best_move, make_best_order
 from src.game_engine.pokemon import Pokemon
 from src.game_engine.game_calcs import Status
 from src.game_engine.team import Team
-from src.io_process import senders
 from src.errors import ShowdownError
 from src.game_engine.effects import Entity
 from src.helpers import player_id_to_index, get_enemy_id_from_player_id
@@ -20,22 +16,25 @@ class Battle(Entity):
     It also holds references to things which affect both teams, like weather effects
     and what turn it is.
     """
-    def __init__(self, battle_object):
+    def __init__(self, match, battle_object):
         """
         init Battle method.
         :param battle_object: Dict, containing the Entity JSON for this battle.
         """
         super().__init__(battle_object)
 
+        self.match = match
         self.teams = [Team(self), Team(self)]
         self.current_pkm = None
         self.turn = 0
         self.player_id = ""
         self.pseudo_weather = []
+        self.force_switch = False
+        self.is_trapped = False
 
         print("Battle started")
         
-    async def update_us(self, team_details):
+    def update_us(self, team_details):
         from src.ui.user_interface import UserInterface
         from src.io_process.showdown import Showdown
 
@@ -47,12 +46,8 @@ class Battle(Entity):
         ui = UserInterface()
         ui.update_team_ui(self.id, self.teams)
 
-        if team_details['force_switch']:
-            login = Showdown()
-            await self.make_switch(login.websocket, None, True)
-        elif team_details['trapped']:
-            login = Showdown()
-            await self.make_move(login.websocket)
+        self.force_switch = team_details['force_switch']
+        self.is_trapped = team_details['trapped']
 
     def update_enemy(self, pkm_name, level, condition):
         """
@@ -126,13 +121,6 @@ class Battle(Entity):
         else:
             pokemon.status = Status.healthy
 
-    async def new_turn(self, turn_number):
-        print("Beginning turn " + str(turn_number))
-        from src.io_process.showdown import Showdown
-        login = Showdown()
-        websocket = login.websocket
-        await self.make_action(websocket)
-
     @staticmethod
     def set_buff(pokemon, stat, quantity):
         """
@@ -155,75 +143,6 @@ class Battle(Entity):
                 return
         raise ShowdownError("Can't do " + disabled_action)
     
-    async def make_team_order(self, websocket):
-        """
-        Call function to correctly choose the first pokemon to send.
-        :param websocket: Websocket stream.
-        """
-        print("Making team order")
-
-        order = "".join([str(x[0]) for x in make_best_order(self, self.id.split('-')[1])])
-        await senders.sendmessage(websocket, self.id, "/team " + order + "|" + str(self.turn))
-
-    async def make_move(self, websocket, best_move=None):
-        """
-        Call function to send move and use the sendmove sender.
-        :param websocket: Websocket stream.
-        :param best_move: [int, int] : [id of best move, value].
-        """
-        if not best_move:
-            best_move = make_best_move(self)
-
-        pokemon = self.teams[player_id_to_index(self.player_id)].active()
-        plan_text = ""
-        if best_move[1] == 1024:
-            plan_text = "Using locked-in move!"
-        else:
-            plan_text = "Using move " + str(pokemon.moves[best_move[0] - 1].name)
-
-        print(plan_text)
-        from src.ui.user_interface import UserInterface
-        ui = UserInterface()
-        ui.update_plan(self.id, plan_text)
-
-        best_move_string = str(best_move[0])
-        if "canMegaEvo" in self.current_pkm[0]:
-            best_move_string = str(best_move[0]) + " mega"
-        await senders.sendmove(websocket, self.id, best_move_string, self.turn)
-
-    async def make_switch(self, websocket, best_switch = None, force_switch = False):
-        """
-        Call function to send switch and use the sendswitch sender.
-        :param websocket: Websocket stream.
-        :param best_switch: int, id of pokemon to switch.
-        """
-        if not best_switch:
-            best_switch = make_best_switch(self, force_switch)[0]
-
-        plan_text = ""
-
-        if best_switch >= 0:
-            plan_text = "Making a switch to " + self.teams[player_id_to_index(self.player_id)].pokemon[best_switch - 1].name
-        else:
-            raise RuntimeError("Could not determine a Pokemon to switch to.")
-        print(plan_text)
-        from src.ui.user_interface import UserInterface
-        ui = UserInterface()
-        ui.update_plan(self.id, plan_text)
-
-        await senders.sendswitch(websocket, self.id, best_switch, self.turn)
-
-    async def make_action(self, websocket):
-        """
-        Launch best action chooser and call corresponding functions.
-        :param websocket: Websocket stream.
-        """
-        action = make_best_action(self)
-        if action[0] == "move":
-            await self.make_move(websocket, action[1:])
-        if action[0] == "switch":
-            await self.make_switch(websocket, action[1])
-
     def run_event(self, event_id, target = None, source = None, effect = None, relay_var = True, on_effect = None, fast_exit = False):
         return relay_var
 
