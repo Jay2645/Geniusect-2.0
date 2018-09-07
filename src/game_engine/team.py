@@ -5,11 +5,12 @@ class Team:
     Team class.
     Contain pokemon list.
     """
-    def __init__(self):
+    def __init__(self, battle):
         """
         init Team method
         """
         self.is_bot = False
+        self.battle = battle
         self.pokemon = []
         self.entry_hazards = {
             "stealth_rock": 0,

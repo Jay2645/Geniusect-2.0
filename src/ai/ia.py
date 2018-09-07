@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from src.ai.move_efficiency import effi_move, effi_boost, effi_pkm
-from src.game_engine.game_calcs import type_damage_calculation
+from src.game_engine.game_calcs import get_effectiveness
 from src.helpers import player_id_to_index, get_enemy_id_from_player_id
 
 def make_best_order(battle, form=None):
@@ -55,11 +55,11 @@ def make_best_switch(battle, force_switch):
         our_effi = effi_pkm(battle, enemy_pkm, pokemon, force_switch)
         print("Raw efficency: " + str(our_effi))
         if team.entry_hazards["stealth_rock"] == 1:
-            effi_mod = type_damage_calculation("Rock", pokemon) * 4 # Multiply by 4 so a 4x resist becomes 1
+            effi_mod = get_effectiveness(pokemon.types, "Rock") * 4 # Multiply by 4 so a 4x resist becomes 1
             if effi_mod > 0:
                 our_effi /= effi_mod
 
-        ground_effi = type_damage_calculation("Ground", pokemon)
+        ground_effi = get_effectiveness(pokemon.types, "Ground")
         if ground_effi > 0:
             # Can be affected by ground entry hazards, so let's check if we have any
             if team.entry_hazards["spikes"] > 0:
@@ -70,7 +70,7 @@ def make_best_switch(battle, force_switch):
                 if "Poison" in pokemon.types:
                     our_effi *= 2 # Poison-types remove Toxic Spikes on entry
                 else:
-                    poison_effi = type_damage_calculation("Poison", pokemon)
+                    poison_effi = get_effectiveness(pokemon.types, "Poison")
                     if poison_effi > 0:
                         our_effi /= (team.entry_hazards["toxic_spikes"] * 1.25)
         

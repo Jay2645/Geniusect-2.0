@@ -72,7 +72,7 @@ class Match:
     async def recieved_request(self, request):
         if request == "":
             return
-        team_details = request_loader(request)
+        team_details = request_loader(request, self.battle)
         await self.battle.update_us(team_details)
 
     async def new_turn(self, turn_number):

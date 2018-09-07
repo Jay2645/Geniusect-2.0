@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from src.helpers import string_to_id
+from src.helpers import get_id
 from src.game_engine.game_calcs import Status
 from copy import deepcopy
 
@@ -100,7 +100,7 @@ class Entity:
         if self.full_name is '':
             self.full_name = self.name
         if self.id is '':
-            string_to_id(self.name)
+            get_id(self.name)
         self.effect_type = str(self.effect_type)
         self.exists = self.exists and self.id is not ''
 

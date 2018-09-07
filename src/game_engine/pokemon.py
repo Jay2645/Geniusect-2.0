@@ -13,7 +13,7 @@ class Pokemon:
     Pokemon class.
     Handle everything corresponding to it.
     """
-    def __init__(self, name, condition, active, level):
+    def __init__(self, battle, name, condition, active, level):
         """
         Init Pokemon method.
         :param name: name of Pokemon.
@@ -21,6 +21,7 @@ class Pokemon:
         :param active: Bool.
         """
         self.name = name
+        self.battle = battle
         self.current_health = 0
         self.max_health = 0
         self.condition = condition
@@ -33,7 +34,6 @@ class Pokemon:
         self.stats = {}
         self.moves = []
         self.substitute = False
-        self.team = None
         self.buff = {
             "atk": [0, 1],
             "def": [0, 1],
@@ -50,7 +50,8 @@ class Pokemon:
         """
         Load every information of pokemon from datafiles and store them
         """
-        infos = json_loader.pokemon_from_json(self.name)
+        print("Loading unknown Pokemon " + self.name)
+        infos = json_loader.pokemon_from_json(self)
         self.types = infos["types"]
         self.abilities = infos["possibleAbilities"]
         self.base_stats = infos["baseStats"]
@@ -64,16 +65,14 @@ class Pokemon:
         :param stats: Dict. {hp, atk, def, spa, spd, spe}
         :param moves: Array. Not used.
         """
-        infos = json_loader.pokemon_from_json(self.name)
+        print("Loading known Pokemon " + self.name)
+        infos = json_loader.pokemon_from_json(self)
         self.types = infos["types"]
         self.abilities = abilities
         self.item = item
         self.base_stats = infos["baseStats"]
         self.stats = stats
         self.moves = moves
-
-        for move in moves:
-            self.moves.append(json_loader.moves[move.replace('60', '')])
 
     def has_type(self, type):
         return type in self.types
@@ -93,16 +92,16 @@ class Pokemon:
         return value
 
     def calculate_stat(self, stat, boost_amount):
-        stat_value = get_stat_value(stat)
+        stat_value = self.get_stat_value(stat)
 
-        if stat is 'hp':
+        if stat == 'hp':
             return stat_value
 
         # Wonder Room swaps defenses before calculating anything else
-        if 'wonderroom' in battle.pseudo_weather:
-            if stat is 'def':
+        if 'wonderroom' in self.battle.pseudo_weather:
+            if stat == 'def':
                 stat_value = get_stat_value('spd')
-            elif stat is 'spd':
+            elif stat == 'spd':
                 stat_value = get_stat_value('def')
 
         # Get boosts
@@ -118,9 +117,9 @@ class Pokemon:
 
         # Multiply the stat value
         if boost_amount >= 0:
-            stat_value = floor(stat_amount * boost_table[boost_amount])
+            stat_value = floor(stat_value * boost_table[boost_amount])
         else:
-            stat_value = floor(stat_amount / boost_table[-boost_amount])
+            stat_value = floor(stat_value / boost_table[-boost_amount])
 
         return stat_value
 
@@ -129,11 +128,11 @@ class Pokemon:
         for type in self.types:
             type_mod = get_effectiveness(type, move.type)
             type_mod = self.battle.single_event('Effectiveness', move, None, type, move, None, type_mod)
-            total_type_mod += self.battle.run_event('Effectiveness', this, type, move, type_mod)
+            total_type_mod += self.battle.run_event('Effectiveness', self, type, move, type_mod)
         return total_type_mod
 
     def run_immunity(self, move_type):
-        if is_fainted():
+        if self.is_fainted():
             return False
         
         if not get_immunity(move_type, self.types):

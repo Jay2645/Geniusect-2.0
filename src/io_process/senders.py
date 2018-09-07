@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from enum import Flag, auto
+from json import loads
 
 class Action(Flag):
     """

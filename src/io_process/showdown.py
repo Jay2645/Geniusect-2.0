@@ -30,6 +30,7 @@ async def create_websocket():
             while True:
                 message = await websocket.recv()
                 log_file.write("\nLog: " + message)
+                print(message)
                 await string_to_action(websocket, message)
 
 
@@ -142,7 +143,7 @@ class Showdown(metaclass=Singleton):
         if self.forfeit_exception is None:
             await senders.leaving(self.websocket, battle.battle_id)
         else:
-            await senders.sendmessage(self.websocket, battle.battle_id, "Oops, I crashed! Exception data: " + str(self.forfeit_exception) + ". You win!")
+            await senders.sendmessage(self.websocket, battle.battle_id, "Oops, I crashed! Exception data: " + str(type(self.forfeit_exception)) + ": " + str(self.forfeit_exception) + ". You win!")
         
         self.battles.remove(battle)
         if self.forfeit_exception is None:
@@ -150,7 +151,15 @@ class Showdown(metaclass=Singleton):
             ui.match_over(battle.battle_id)
         await senders.leaving(self.websocket, battle.battle_id)
 
+    async def deinit_game(self):
+        if self.forfeit_exception is not None:
+            return
+        forfeit_all_matches(self.forfeit_exception)
+
     def forfeit_all_matches(self, exception=None):
+        if self.forfeit_exception is None:
+            self.forfeit_exception = exception
+
         if self.forfeit_exception is not None:
             return
         

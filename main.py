@@ -6,7 +6,7 @@ from src.io_process.json_loader import update_json
 from src.ui.user_interface import UserInterface
 from src.io_process.showdown import shutdown_showdown, create_websocket
 
-should_run_headless = False
+should_run_headless = True
 
 def main(async_loop):
     """

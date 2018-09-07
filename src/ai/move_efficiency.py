@@ -1,6 +1,6 @@
 from math import floor
 
-from src.game_engine.game_calcs import damage_calculation, Status
+from src.game_engine.game_calcs import get_damage, Status
 from src.helpers import player_id_to_index
 
 def effi_boost(move, pkm1, pkm2):
@@ -164,7 +164,10 @@ def effi_move(battle, move, pkm1, pkm2, team):
     elif move.id in non_volatile_status_moves and pkm2.status == Status.healthy:
         weight = effi_status(move, pkm1, pkm2, team)
     else:
-        weight = damage_calculation(battle, move, pkm1, pkm2)
+        weight = get_damage(battle, pkm1, pkm2, move)
+        if weight is None:
+            weight = 0
+    print(move.id + "'s weight: " + str(weight) + "; accuracy: " + str(accuracy))
     modified_weight = weight * accuracy
     if pkm1.team.is_bot and pkm1.active:
         print("Assigning a weight of " + str(modified_weight) + " for " + pkm1.name + "'s " + move.name + " "+str(weight) + " plus " + str(accuracy))

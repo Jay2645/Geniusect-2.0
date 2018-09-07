@@ -1,5 +1,22 @@
 #!/usr/bin/env python3
 
+def get_id(object):
+    if object is None:
+        return ""
+    try:
+        if object.id != "":
+            return object.id
+    except AttributeError:
+        pass
+
+    try:
+        if object.userid != "":
+            return object.userid
+    except AttributeError:
+        pass
+
+    return str(object).lower().replace(r'/[^a-z0-9]+/g', '')
+
 def player_id_to_index(player_id):
     """
     Gets our numerical player ID from a 'p1' or 'p2' tag.
@@ -22,8 +39,6 @@ def get_enemy_id_from_player_id(player_id):
         return 0
     else:
         return -1
-
-def string_to_id(name):
 
 # Singleton class taken from https://michaelgoerz.net/notes/singleton-objects-in-python.html
 

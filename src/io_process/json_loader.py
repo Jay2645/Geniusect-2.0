@@ -8,6 +8,8 @@ import os
 
 from datetime import datetime
 
+from src.helpers import get_id
+
 pokemon = {}
 format_moves = {}
 moves = {}
@@ -97,7 +99,7 @@ def load_json():
         
     print("All JSON has been loaded!")
 
-def request_loader(server_json):
+def request_loader(server_json, battle):
     """
     Parse and translate json send by server. Reload bot team. Called each turn.
     :param req: json sent by server.
@@ -106,7 +108,7 @@ def request_loader(server_json):
     jsonobj = json.loads(server_json)
     output = {}
 
-    objteam = team_from_json(jsonobj['side'])
+    objteam = team_from_json(jsonobj['side'], battle)
     objteam.is_bot = True
 
     active_pkm = objteam.active()
@@ -135,7 +137,7 @@ def request_loader(server_json):
                 # If our move isn't already disabled, disable it if we can't find it
                 # Sometimes a disabled move just isn't listed in the active array.
                 active_pkm.moves[i].disabled = not found_move
-            
+
     output['team'] = objteam
     output['active'] = active_moves
     output['turn'] = jsonobj['rqid']
@@ -151,21 +153,24 @@ def request_loader(server_json):
     return output
 
         
-def team_from_json(pkm_team):
+def team_from_json(pkm_team, battle):
+    print("Grabbing team from JSON: " + str(pkm_team))
     from src.game_engine.team import Team
     from src.game_engine.pokemon import Pokemon
     from src.game_engine.move import Move
 
-    team = Team()
+    team = Team(battle)
+    print("Created new team")
     for pkm in pkm_team["pokemon"]:
         try:
-            newpkm = Pokemon(pkm['details'].split(',')[0], pkm['condition'], pkm['active'],
+            newpkm = Pokemon(battle, pkm['details'].split(',')[0], pkm['condition'], pkm['active'],
                                 pkm['details'].split(',')[1].split('L')[1]
                                 if len(pkm['details']) > 1 and 'L' in pkm['details'] else 100)
             moveset = []
             for json_move in pkm['moves']:
-                move = Move({"id":json_move})
+                move = Move({"id":json_move}, newpkm)
                 moveset.append(move)
+
             newpkm.load_known([pkm['baseAbility']], pkm["item"], pkm['stats'], moveset)
             team.add(newpkm)
         except IndexError:
@@ -173,7 +178,7 @@ def team_from_json(pkm_team):
 
     return team
 
-def pokemon_from_json(pkm_name):
+def pokemon_from_json(pokemon_obj):
     """
     Filtrate, regroup and translate data from json files.
     :param pkm_name: Pokemon's name
@@ -181,7 +186,7 @@ def pokemon_from_json(pkm_name):
     """
     from src.game_engine.move import Move
 
-    pkm_name = pkm_name.lower().replace('-', '').replace(' ', '').replace('%', '').replace('\'', '').replace('.', '')
+    pkm_name = pokemon_obj.name.lower().replace('-', '').replace(' ', '').replace('%', '').replace('\'', '').replace('.', '')
     if pkm_name == 'mimikyubusted':
         pkm_name = 'mimikyu'
 
@@ -211,6 +216,6 @@ def pokemon_from_json(pkm_name):
         else:
             raise KeyError("Could not find valid moves for " + pkm_name)
     for json_move in pokemon_moves:
-        move = Move({"id":json_move})
+        move = Move({"id":json_move}, pokemon_obj)
         res["possibleMoves"].append(move)
     return res

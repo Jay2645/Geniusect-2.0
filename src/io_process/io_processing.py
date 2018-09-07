@@ -1,17 +1,12 @@
 #!/usr/bin/env python3
+import traceback
+import sys
 
-import os
-import re
-import requests
-
-from json import JSONDecodeError
-from datetime import datetime
 from src.io_process import senders, json_loader
 from src.errors import CantSwitchError, MustSwitchError, BattleCrashedError, NoPokemonError, InvalidMoveError, InvalidTargetError, MegaEvolveError
 from src.io_process.showdown import Showdown
 from src.io_process.battlelog_parsing import battlelog_parsing
 from src.ui.user_interface import UserInterface
-from src.game_engine.battle import Battle
 
 nb_fights_max = 2
 nb_fights_simu_max = 1
@@ -156,6 +151,9 @@ async def string_to_action(websocket, message):
             future = await filter_server_messages(websocket, message)
     except Exception as e:
         print("Caught exception!")
+        exc_info = sys.exc_info()
+        traceback.print_exception(*exc_info)
+
         login.forfeit_all_matches(e)
 
 def determine_showdown_error(error_reason):

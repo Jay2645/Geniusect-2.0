@@ -61,7 +61,7 @@ class Move(Entity):
     Represents data representing an individual move.
     """
 
-    def __init__(self, move_json):
+    def __init__(self, move_json, pokemon):
         # Example move object:
         # {
         #    'move':'Flash Cannon',
@@ -71,6 +71,8 @@ class Move(Entity):
         #    'target':'normal',
         #    'disabled':False
         # }
+
+        self.pokemon = pokemon
 
         self.id = move_json['id']
         self.id = str.replace(self.id, "60", "")
@@ -176,7 +178,7 @@ class Move(Entity):
             try:
                 self.constant_damage_amount = int(damage_type)
             except ValueError:
-                self.set_damage_amount = 0
+                self.constant_damage_amount = 0
         except KeyError:
             self.does_damage_based_on_level = False
             self.constant_damage_amount = 0

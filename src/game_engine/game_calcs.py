@@ -4,11 +4,26 @@ from math import floor
 from enum import Enum
 
 from src.io_process import json_loader
+from src.game_engine.natures import battle_natures
+#from src.io_process.json_loader import get_move, get_item, get_ability
+
+class Status(Enum):
+    """
+    Status problem enumeration.
+    """
+    none = -1
+    healthy = 0
+    poisoned = 1
+    toxic = 2
+    paralyzed = 3
+    burned = 4
+    asleep = 5
+    frozen = 6
+    fainted = 7
 
 def get_typechart():
-    from src.io_processs.login import Showdown
-    login = Showdown()
-    return login.typechart
+    from src.io_process import json_loader
+    return json_loader.typechart
 
 def get_effect(name):
     if name is None or name is "":
@@ -43,7 +58,7 @@ def get_immunity(source_type, target_types):
             return False
     return True
 
-def get_effectiveness(source_type, target_types):
+def get_effectiveness(target_types, source_type):
     """
 	Returns a value between -2 and 2 regarding how effective a move would be.
     A value of 0 is normal effectiveness, -2 is 0.25x, 2 is 4x.
@@ -57,6 +72,9 @@ def get_effectiveness(source_type, target_types):
     typechart = get_typechart()
 
     total_type_mod = 0
+    if type(target_types) is str:
+        target_types = [target_types]
+
     for target_type in target_types:
         effectiveness = typechart[target_type]['damageTaken'][source_type]
         if effectiveness is 1:
@@ -99,12 +117,12 @@ def spread_modify(base_stats, pokemon, pokemon_evs = None, pokemon_ivs = None, n
     }
 
     for stat in base_stats:
-        modified_stats[stat] = stat_calculation(base_stats[stat], pokemon_evs[stat], pokemon_ivs[stat], pokemon.level)
+        modified_stats[stat] = stat_calculation(stat, base_stats[stat], pokemon_evs[stat], pokemon_ivs[stat], pokemon.level)
     return nature_modify(modified_stats, nature)
 
-def stat_calculation(stat_amount, ev = 252, iv = 31, level = 100):
+def stat_calculation(stat, stat_amount, ev = 252, iv = 31, level = 100):
     base_stat_calc = 2 * stat_amount + iv + floor(ev / 4)
-    if stat is "hp":
+    if stat == "hp":
         # HP has a weird calculation
         return floor(floor(base_stat_calc + 100) * level / 100 + 10)
     else:
@@ -136,9 +154,9 @@ def get_damage(battle, attacker, defender, move):
     if move.does_damage_based_on_level:
         # Seismic Toss, Nightshade
         return attacker.level
-    if move.set_damage_amount > 0:
+    if move.constant_damage_amount > 0:
         # Dragon Rage always does 40 HP
-        return move.set_damage_amount
+        return move.constant_damage_amount
 
     if move.base_power is 0:
         return None
@@ -151,7 +169,7 @@ def get_damage(battle, attacker, defender, move):
     if move_will_crit:
         move_will_crit = battle.run_event('CriticalHit', defender, None, move)
 
-    return run_damage_formula(battle, attacker, defender, move_will_crit)
+    return run_damage_formula(battle, attacker, defender, move, move_will_crit)
 
 def run_damage_formula(battle, attacker, defender, move, is_crit, best_case = True):
     base_power = battle.run_event('BasePower', attacker, defender, move, move.base_power, True)
@@ -172,8 +190,8 @@ def run_damage_formula(battle, attacker, defender, move, is_crit, best_case = Tr
     if not is_crit:
         is_crit = move.will_crit
 
-    attack_boosts = defender.boosts[attack_stat] if move.use_defender_offensive_stat else attacker.boosts[attack_stat]
-    defense_boosts = attacker.boosts[defense_stat] if move.use_attacker_defense_stat else defender.boosts[defense_stat]
+    attack_boosts = defender.buff[attack_stat][0] if move.use_defender_offensive_stat else attacker.buff[attack_stat][0]
+    defense_boosts = attacker.buff[defense_stat][0] if move.use_attacker_defense_stat else defender.buff[defense_stat][0]
     
     ignore_negative_offensive = is_crit or move.ignore_negative_offensive
     ignore_positive_defensive = is_crit or move.ignore_positive_defensive
@@ -199,21 +217,22 @@ def run_damage_formula(battle, attacker, defender, move, is_crit, best_case = Tr
         defense = defender.calculate_stat(defense_stat, defense_boosts)
         
     # Apply Stat Modifiers
-    attack = battle.run_event('Modify' + stat_table[attackStat], attacker, defender, move, attack)
-    defense = battle.run_event('Modify' + stat_table[defenseStat], defender, attacker, move, defense)
+    attack = battle.run_event('Modify' + stat_table[attack_stat], attacker, defender, move, attack)
+    defense = battle.run_event('Modify' + stat_table[defense_stat], defender, attacker, move, defense)
 
     # int(int(int(2 * L / 5 + 2) * A * P / D) / 50)
     base_damage = floor(floor(floor(2 * attacker.level / 5 + 2) * base_power * attack / defense) / 50)
 
     return modify_damage(base_damage, battle, attacker, defender, move, is_crit)
 
-def modify_damage(base_damage, battle, attacker, defender, move, is_crit, best_case):
+def modify_damage(base_damage, battle, attacker, defender, move, is_crit, best_case = True):
     move_type = move.type
     base_damage += 2
 
     # @TODO: Doubles support, spread hit
 
     base_damage = battle.run_event('WeatherModifyDamage', attacker, defender, move, base_damage)
+    print("Base damage: " + str(base_damage))
 
     if is_crit:
         base_damage *= move.crit_modifier
@@ -241,12 +260,12 @@ def modify_damage(base_damage, battle, attacker, defender, move, is_crit, best_c
         for i in range(0, type_effectiveness, -1):
             base_damage = floor(base_damage / 2)
 
-    if attacker.status is Status.BRN and move.category is 'Physical' and not attacker.has_ability('guts'):
+    if attacker.status is Status.burned and move.category is 'Physical' and not attacker.has_ability('guts'):
         if move.id is not 'facade':
             base_damage = floor(base_damage / 2)
 
     # Final modifier. Modifiers that modify damage after min damage check, such as Life Orb.
-    base_damage = battle.run_event('ModifyDamage', pokemon, target, move, baseDamage)
+    base_damage = battle.run_event('ModifyDamage', attacker, defender, move, base_damage)
 
     if move.is_z_move and move.z_broke_protect:
         base_damage = floor(base_damage / 4)
