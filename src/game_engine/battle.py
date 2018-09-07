@@ -25,6 +25,8 @@ class Battle(Entity):
         init Battle method.
         :param battle_id: String, battle_id of battle.
         """
+        super().__init__({"id":battle_id, "name":battle_id})
+
         self.teams = [Team(self), Team(self)]
         self.current_pkm = None
         self.turn = 0

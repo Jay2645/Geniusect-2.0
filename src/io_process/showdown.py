@@ -30,7 +30,6 @@ async def create_websocket():
             while True:
                 message = await websocket.recv()
                 log_file.write("\nLog: " + message)
-                print(message)
                 await string_to_action(websocket, message)
 
 

@@ -179,7 +179,10 @@ class Entity:
             pass
 
     def __str__(self):
-        return self.name
+        output = self.name
+        if not self.exists:
+            output += " (Copy)"
+        return output
 
     def get_volatile_copy(self):
         volatile_copy = deepcopy(self)
