@@ -31,7 +31,8 @@ class BattleHelper {
 
 		const mod = options.mod || 'base';
 		this.baseFormat = options.baseFormat || {effectType: 'Format', mod: mod};
-		this.dex = Dex.mod(mod);
+        this.dex = Dex.mod(mod);
+        this.battle = null;
 
 		this.modPrefix = this.baseFormat.name ? `[${this.baseFormat.name}]` : '';
 		if (!this.modPrefix && !this.dex.isBase) {
@@ -89,41 +90,12 @@ class BattleHelper {
 
 		this.dex.installFormat(formatId, format);
 		return format;
-	}
+    }
 
-	/**
-	 * Creates a new Battle and returns it.
-	 *
-	 * @param {Object} [options]
-	 * @param {Team[]} [teams]
-	 * @returns {Sim.Battle} A battle.
-	 */
-	createBattle(options, teams) {
-		if (Array.isArray(options)) {
-			teams = options;
-			options = {};
-		}
-		if (!options) options = {};
-		const format = this.getFormat(options);
-		const battle = new Sim.Battle({
-			formatid: format.id,
-			// If a seed for the pseudo-random number generator is not provided,
-			// a default seed (guaranteed to be the same across test executions)
-			// will be used.
-			seed: options.seed || DEFAULT_SEED,
-		});
-		
-		if (teams) {
-			for (let i = 0; i < teams.length; i++) {
-				assert(Array.isArray(teams[i]), "Team provided is not an array");
-				const slotNum = i + 1;
-				battle.join('p' + slotNum, 'Guest ' + slotNum, 1, teams[i]);
-			}
-        }
-
+    getBattleJSON() {
         // Note: cache should not be re-used by repeated calls to JSON.stringify.
         var cache = [];
-        var battleJson = JSON.stringify(battle, function (key, value) {
+        var battleJson = JSON.stringify(this.battle, function (key, value) {
             if (typeof value === 'object' && value !== null) {
                 if (cache.indexOf(value) !== -1) {
                     // Duplicate reference found
@@ -142,6 +114,39 @@ class BattleHelper {
         });
         cache = null; // Enable garbage collection
         return battleJson;
+    }
+
+	/**
+	 * Creates a new Battle and returns it.
+	 *
+	 * @param {Object} [options]
+	 * @param {Team[]} [teams]
+	 * @returns {Sim.Battle} A battle.
+	 */
+	createBattle(options, teams) {
+		if (Array.isArray(options)) {
+			teams = options;
+			options = {};
+		}
+		if (!options) options = {};
+		const format = this.getFormat(options);
+		this.battle = new Sim.Battle({
+			formatid: format.id,
+			// If a seed for the pseudo-random number generator is not provided,
+			// a default seed (guaranteed to be the same across test executions)
+			// will be used.
+			seed: options.seed || DEFAULT_SEED,
+		});
+		
+		if (teams) {
+			for (let i = 0; i < teams.length; i++) {
+				assert(Array.isArray(teams[i]), "Team provided is not an array");
+				const slotNum = i + 1;
+				battle.join('p' + slotNum, 'Guest ' + slotNum, 1, teams[i]);
+			}
+        }
+
+        return this.getBattleJSON();
     }
 }
 

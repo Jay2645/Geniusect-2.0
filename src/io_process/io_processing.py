@@ -29,6 +29,8 @@ async def filter_server_messages(websocket, message):
             if current[1] == "init":
                 # Creation of the battle
                 match = await login.create_battle(battle_id)
+            elif current[1] == "start":
+                match.start_battle()
             elif current[1] == "error":
                 # Showdown had an error of some kind
                 determine_showdown_error(current[2])

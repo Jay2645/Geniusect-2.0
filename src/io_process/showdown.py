@@ -96,17 +96,20 @@ class Showdown(metaclass=Singleton):
         await senders.set_nickname(self.websocket, self.username, resp.text[1:])
         await senders.set_avatar(self.websocket, avatar)
 
+    def get_challenge_format(self):
+        return self.formats[0]
+
     async def search_for_fights(self):
         # Once we are connected.
         
         ui = UserInterface()
         challenge_mode = ui.get_selected_challenge_mode()
 
-        challenge_format = self.formats[0]
+        challenge_format = self.get_challenge_format()
         if challenge_mode == 1:
             challenge_player = ui.get_challenger_name()
             print("Challenging " + challenge_player + " using " + challenge_format)
-            await senders.challenge(self.websocket, challenge_player, self.formats[0])
+            await senders.challenge(self.websocket, challenge_player, challenge_format)
         elif challenge_mode == 2:
             print("Searching for a match on the " + challenge_format + " ladder.")
             await senders.searching(self.websocket, challenge_format)

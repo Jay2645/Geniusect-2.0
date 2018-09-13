@@ -23,7 +23,7 @@ class Match:
 
     def __init__(self, match_id):
         self.battle_id = match_id
-        self.battle = Battle(self, {"id":match_id, "name":match_id})
+        self.battle = Battle(self, {"id":match_id, "name":match_id, "format":match_id.split("-")[1]})
         self.rules = []
         self.sides = [
             {
@@ -80,6 +80,9 @@ class Match:
 
     def add_rule(self, rule):
         self.rules.append(rule)
+
+    def start_battle(self):
+        self.battle.start_battle()
 
     async def recieved_request(self, request):
         if request == "":
@@ -206,6 +209,8 @@ class Match:
         ui.make_new_match(self)
 
     async def game_is_over(self, websocket, winner_name):
+        self.battle.battle_over()
+
         from src.io_process.showdown import Showdown
         login = Showdown()
         if winner_name == login.username:

@@ -107,7 +107,6 @@ class Pokemon:
         # Get boosts
         boosts = {}
         boosts[stat] = boost_amount
-        self.battle.run_event('ModifyBoost', self, None, None, boosts)
         boost_amount = boosts[stat]
         boost_table = [1, 1.5, 2, 2.5, 3, 3.5, 4]
         if boost_amount > 6:
@@ -127,8 +126,7 @@ class Pokemon:
         total_type_mod = 0
         for type in self.types:
             type_mod = get_effectiveness(type, move.type)
-            type_mod = self.battle.single_event('Effectiveness', move, None, type, move, None, type_mod)
-            total_type_mod += self.battle.run_event('Effectiveness', self, type, move, type_mod)
+            total_type_mod += type_mod
         return total_type_mod
 
     def run_immunity(self, move_type):
@@ -139,10 +137,6 @@ class Pokemon:
             # We are naturally immune
             return False
 
-        immunity = self.battle.run_event('Immunity', self, None, None, move_type)
-        if not immunity:
-            # Artificial status immunity (Levitate, etc.)
-            return False
         return True
 
     def update_health(self, health_string):

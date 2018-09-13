@@ -162,17 +162,11 @@ def get_damage(battle, attacker, defender, move):
         return None
 
     move_will_crit = move.will_crit
-    # Here we could actually calculate the crit percentage
-    # However, this would screw up AI predictions in long-term planning
-    # If it always considers the worst-case scenario (crit every turn),
-    # then it would never use defensive moves (as crits ignore defensive buffs)
-    if move_will_crit:
-        move_will_crit = battle.run_event('CriticalHit', defender, None, move)
 
     return run_damage_formula(battle, attacker, defender, move, move_will_crit)
 
 def run_damage_formula(battle, attacker, defender, move, is_crit, best_case = True):
-    base_power = battle.run_event('BasePower', attacker, defender, move, move.base_power, True)
+    base_power = move.base_power
     if base_power <= 0:
         # Event may modify the base power
         return 0
@@ -216,10 +210,6 @@ def run_damage_formula(battle, attacker, defender, move, is_crit, best_case = Tr
     else:
         defense = defender.calculate_stat(defense_stat, defense_boosts)
         
-    # Apply Stat Modifiers
-    attack = battle.run_event('Modify' + stat_table[attack_stat], attacker, defender, move, attack)
-    defense = battle.run_event('Modify' + stat_table[defense_stat], defender, attacker, move, defense)
-
     # int(int(int(2 * L / 5 + 2) * A * P / D) / 50)
     base_damage = floor(floor(floor(2 * attacker.level / 5 + 2) * base_power * attack / defense) / 50)
 
@@ -230,8 +220,6 @@ def modify_damage(base_damage, battle, attacker, defender, move, is_crit, best_c
     base_damage += 2
 
     # @TODO: Doubles support, spread hit
-
-    base_damage = battle.run_event('WeatherModifyDamage', attacker, defender, move, base_damage)
     print("Base damage: " + str(base_damage))
 
     if is_crit:
@@ -263,9 +251,6 @@ def modify_damage(base_damage, battle, attacker, defender, move, is_crit, best_c
     if attacker.status is Status.burned and move.category is 'Physical' and not attacker.has_ability('guts'):
         if move.id is not 'facade':
             base_damage = floor(base_damage / 2)
-
-    # Final modifier. Modifiers that modify damage after min damage check, such as Life Orb.
-    base_damage = battle.run_event('ModifyDamage', attacker, defender, move, base_damage)
 
     if move.is_z_move and move.z_broke_protect:
         base_damage = floor(base_damage / 4)

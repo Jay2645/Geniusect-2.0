@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
 import re
+import random
 
+from node_vm2 import NodeVM, VMError
 
 from src.game_engine.pokemon import Pokemon
 from src.game_engine.game_calcs import Status
@@ -21,6 +23,8 @@ class Battle(Entity):
         init Battle method.
         :param battle_object: Dict, containing the Entity JSON for this battle.
         """
+        print(battle_object)
+
         super().__init__(battle_object)
 
         self.match = match
@@ -31,8 +35,21 @@ class Battle(Entity):
         self.pseudo_weather = []
         self.force_switch = False
         self.is_trapped = False
+        self.format = battle_object["format"]
 
-        print("Battle started")
+        
+        self.vm = NodeVM()
+        with open("src/game_engine/js/battlehelper.js", "r", encoding='utf-8') as battlehelper:
+            jscode = battlehelper.read()
+        self.battle_module = self.vm.code(jscode, "src/game_engine/js/battlehelper.js", console = "redirect", require = {"external": True, "builtin": ["*"]})
+        self.battle_json = {}
+
+    def start_battle(self):
+        random.seed()
+        battle_options = {"format":self.format, "seed":[random.randint(0, 65535), random.randint(0, 65535), random.randint(0, 65535), random.randint(0, 65535)]}
+        self.battle_json = self.battle_module.call_member("createBattle", battle_options)
+
+        print("Battle started in format " + self.format)
         
     def update_us(self, team_details):
         from src.ui.user_interface import UserInterface
@@ -40,6 +57,7 @@ class Battle(Entity):
 
         player_index = player_id_to_index(self.player_id)
         self.teams[player_index] = team_details['team']
+        print(self.teams)
         self.current_pkm = team_details['active']
         self.turn = team_details['turn']
 
@@ -101,6 +119,10 @@ class Battle(Entity):
         our_team = self.get_bot_team()
         return our_team.active()
 
+    def update_battle_json(self):
+        self.battle_json = self.battle_module.call_member("getBattleJSON")
+        return self.battle_json
+
     @staticmethod
     def update_status(pokemon, status: str = ""):
         """
@@ -143,8 +165,10 @@ class Battle(Entity):
                 return
         raise ShowdownError("Can't do " + disabled_action)
     
-    def run_event(self, event_id, target = None, source = None, effect = None, relay_var = True, on_effect = None, fast_exit = False):
-        return relay_var
-
-    def single_event(self, event_id, effect, effect_data, target, source, source_effect, relay_var = True):
-        return relay_var
+    def battle_over(self):
+        try:
+            self.vm.destroy()
+        except VMError:
+            pass
+        self.vm = None
+        self.battle_module = None
