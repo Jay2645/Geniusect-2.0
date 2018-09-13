@@ -21,17 +21,21 @@ def update_json(should_force_update = False):
     """
 
     should_update_json = should_force_update
-
+    
     if not should_update_json:
         # Check to see when the file was last modified
-        last_modification_time = datetime.fromtimestamp(os.stat("data/formats-data.json").st_mtime)
-        # If we've already modified today, don't bother updating it
-        should_update_json = datetime.today().date() != last_modification_time.date()
+        try:
+            last_modification_time = datetime.fromtimestamp(os.stat("data/formats-data.json").st_mtime)
+            # If we've already modified today, don't bother updating it
+            should_update_json = datetime.today().date() != last_modification_time.date()
+        except FileNotFoundError:
+            should_update_json = True
             
     if should_update_json:
         print("Grabbing latest JSON files from the Showdown servers")
-    
+        
         os.makedirs("data", exist_ok=True)
+        
         pattern = re.compile(r'([{,])([a-zA-Z0-9-]+):')
         js_pattern = re.compile(r'.+= ')
 

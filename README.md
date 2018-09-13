@@ -8,6 +8,8 @@ Original bot was forked from [Synedh](https://github.com/Synedh/showdown-battle-
 - asyncio
 - websockets
 - requests
+- node
+- npm
 
 ### Supported formats
 - gen7randombattle
@@ -20,10 +22,15 @@ Original bot was forked from [Synedh](https://github.com/Synedh/showdown-battle-
 (More upcoming)
 
 ### Installation
+Make sure the latest version of [Node](https://nodejs.org/en/download/) is present in your computer's PATH.
+
 ```
 pip3 install asyncio
 pip3 install websockets
 pip3 install requests
+pip3 install node
+pip3 install npm
+pip3 install node_vm2
 chmod +x main.py
 ./main.py
 ```
@@ -49,9 +56,13 @@ For more information, check the [showdown.py](src/showdown.py) file. You can als
 #### Game Engine
 The game engine simulates battles, teams and Pokemon.
 
-For each battle, an object is created and filled with information sent by Showdown's servers. For the unknown information (enemy's team), moves are filled thanks to a file taken from source code where moves and Pokemon are listed.
+For each battle, an object is created and filled with information sent by Showdown's servers.
 
-Once per day, the bot will create a `data` folder, holding .json files containing information about every single Pokemon. These .json files are taken directly from Showdown's servers, and will be updated every single day after midnight.
+We have a local instance of Pokemon Showdown's server, contained inside the Pokemon Showdown submodule. This is the same engine that Pokemon Showdown uses, and should be periodically updated to ensure that it stays up-to-date.
+
+We use [Node VM2](https://github.com/eight04/node_vm2) to communicate with the JavaScript contained inside our local Pokemon Showdown engine. This allows us to simulate outcomes based on Showdown's actual code, and then take actions based on what actions turned out the best on our local version of Showdown.
+
+Node VM2 returns JSON objects representing JavaScript objects inside the virtual machine. As this is a raw JSON object, all functions contained within the class are stripped. The [Game Engine](src/game_engine) folder contains helper Python classes for these JSON objects, as well as JavaScript code that can be run through VM2 to help us modify the actual JavaScript objects on the virtual machine.
 
 #### IA
 This is the bots' "brain." It's essentially a series of `if` statements that produce decent results. Each potential action is assigned a score, and then the action with the best score is selected.
