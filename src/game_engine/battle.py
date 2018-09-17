@@ -10,7 +10,7 @@ from src.game_engine.game_calcs import Status
 from src.game_engine.team import Team
 from src.errors import ShowdownError
 from src.game_engine.effects import Entity
-from src.helpers import player_id_to_index, get_enemy_id_from_player_id
+from src.helpers import player_id_to_index, get_enemy_id_from_player_id, index_to_player_id
 
 class Battle(Entity):
     """
@@ -23,8 +23,6 @@ class Battle(Entity):
         init Battle method.
         :param battle_object: Dict, containing the Entity JSON for this battle.
         """
-        print(battle_object)
-
         super().__init__(battle_object)
 
         self.match = match
@@ -37,7 +35,6 @@ class Battle(Entity):
         self.is_trapped = False
         self.format = battle_object["format"]
 
-        
         self.vm = NodeVM()
         with open("src/game_engine/js/battlehelper.js", "r", encoding='utf-8') as battlehelper:
             jscode = battlehelper.read()
@@ -47,8 +44,10 @@ class Battle(Entity):
     def start_battle(self):
         random.seed()
         battle_options = {"format":self.format, "seed":[random.randint(0, 65535), random.randint(0, 65535), random.randint(0, 65535), random.randint(0, 65535)]}
-        self.battle_json = self.battle_module.call_member("createBattle", battle_options)
-
+        battle_json = self.battle_module.call_member("createBattle", battle_options)
+        
+        self.__update_battle_team("p1", self.teams[0])
+        self.__update_battle_team("p2", self.teams[1])
         print("Battle started in format " + self.format)
         
     def update_us(self, team_details):
@@ -57,15 +56,37 @@ class Battle(Entity):
 
         player_index = player_id_to_index(self.player_id)
         self.teams[player_index] = team_details['team']
-        print(self.teams)
         self.current_pkm = team_details['active']
         self.turn = team_details['turn']
+        
+        self.force_switch = team_details['force_switch']
+        self.is_trapped = team_details['trapped']
 
         ui = UserInterface()
         ui.update_team_ui(self.id, self.teams)
+        
+        self.__update_battle_team(self.player_id, self.teams[player_index])
 
-        self.force_switch = team_details['force_switch']
-        self.is_trapped = team_details['trapped']
+    def __update_battle_team(self, player_index, player_team):
+        team_object = player_team.create_team_object()
+        if len(team_object['team']) == 0:
+            print(team_object['name'] + " had an empty team.")
+            return
+
+        print(team_object)
+
+        self.battle_module.call_member("updateBattleTeam", player_index, team_object)
+        
+        self.update_battle_json()
+
+    def __update_battle_json(self, battle_json):
+        from json import loads, JSONDecodeError
+        try:
+            self.battle_json = loads(battle_json)
+            if self.battle_json == None:
+                self.battle_json = {}
+        except JSONDecodeError:
+            self.battle_json = {}
 
     def update_enemy(self, pkm_name, level, condition):
         """
@@ -100,13 +121,16 @@ class Battle(Entity):
             # This is a Pokemon we already know about
             for pkm in self.teams[enemy_index].pokemon:
                 # Mark this Pokemon as active and the others as inactive
-                if pkm.name.lower() == pkm_name.lower():
+                if pkm.species.lower() == pkm_name.lower():
                     pkm.active = True
                 else:
                     pkm.active = False
         
         ui = UserInterface()
         ui.update_team_ui(self.id, self.teams)
+
+        enemy_id = index_to_player_id(enemy_index)
+        self.__update_battle_team(enemy_id, self.teams[enemy_index])
 
     def update_player(self, player_data, player_index):
         if player_data['is_bot']:
@@ -120,7 +144,8 @@ class Battle(Entity):
         return our_team.active()
 
     def update_battle_json(self):
-        self.battle_json = self.battle_module.call_member("getBattleJSON")
+        battle_json = self.battle_module.call_member("getBattleJSON")
+        self.__update_battle_json(battle_json)
         return self.battle_json
 
     @staticmethod

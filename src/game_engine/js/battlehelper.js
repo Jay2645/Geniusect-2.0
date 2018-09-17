@@ -5,6 +5,7 @@ const util = require('util');
 
 const Dex = require('./../../../Pokemon-Showdown/sim/dex');
 const Sim = require('./../../../Pokemon-Showdown/sim');
+const GSBattle = require('./geniusectbattle')
 
 const cache = new Map();
 
@@ -127,16 +128,16 @@ class BattleHelper {
 		if (Array.isArray(options)) {
 			teams = options;
 			options = {};
-		}
+        }
 		if (!options) options = {};
 		const format = this.getFormat(options);
-		this.battle = new Sim.Battle({
+        this.battle = new GSBattle({
 			formatid: format.id,
 			// If a seed for the pseudo-random number generator is not provided,
 			// a default seed (guaranteed to be the same across test executions)
 			// will be used.
 			seed: options.seed || DEFAULT_SEED,
-		});
+        });
 		
 		if (teams) {
 			for (let i = 0; i < teams.length; i++) {
@@ -145,8 +146,15 @@ class BattleHelper {
 				battle.join('p' + slotNum, 'Guest ' + slotNum, 1, teams[i]);
 			}
         }
-
         return this.getBattleJSON();
+    }
+
+    updateBattleTeam(index, newTeam) {
+        if (this.battle === null) {
+            return;
+        }
+
+        this.battle.setPlayer(index, newTeam);
     }
 }
 

@@ -188,7 +188,7 @@ def pokemon_from_json(pokemon_obj):
     """
     from src.game_engine.move import Move
 
-    pkm_name = pokemon_obj.name.lower().replace('-', '').replace(' ', '').replace('%', '').replace('\'', '').replace('.', '')
+    pkm_name = pokemon_obj.species.lower().replace('-', '').replace(' ', '').replace('%', '').replace('\'', '').replace('.', '')
     if pkm_name == 'mimikyubusted':
         pkm_name = 'mimikyu'
 

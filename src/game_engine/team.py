@@ -40,7 +40,7 @@ class Team:
             pokemon.team = self
             self.pokemon.append(pokemon)
         else:
-            raise IndexError("Failed to add " + pokemon.name + " : there is yet six pokemon in team :\n" + str(self))
+            raise IndexError("Failed to add " + pokemon.species + " : there is yet six pokemon in team :\n" + str(self))
 
     def remove(self, pkm_name):
         """
@@ -48,21 +48,34 @@ class Team:
         :param pkm_name: Name of pokemon
         """
         for i, pkm in enumerate(self.pokemon):
-            if pkm_name in pkm.name.lower():
-                if "mega" not in pkm.name.lower():
+            if pkm_name in pkm.species.lower():
+                if "mega" not in pkm.species.lower():
                     del self.pokemon[i]
                 return
         raise NameError("Unable to remove " + pkm_name + " from team :\n" + str(self))
 
+    def create_team_object(self):
+        from src.io_process import showdown
+        team_object = {
+            "name": "Bot" if self.is_bot else "Enemy",
+            "avatar": showdown.avatar if self.is_bot else 1,
+            "team": []
+        }
+
+        for pkm in self.pokemon:
+            team_object["team"].append(pkm.get_set_object())
+
+        return team_object
+
     def __contains__(self, pkm_name: str):
-        return any(pkm.name == pkm_name for pkm in self.pokemon)
+        return any(pkm.species == pkm_name for pkm in self.pokemon)
         # for pkm in self.pokemon:
-        #     if pkm.name == pkm_name:
+        #     if pkm.species == pkm_name:
         #         return True
         # return False
 
     def __repr__(self):
-        return ', '.join([pkm.name for pkm in self.pokemon])
+        return ', '.join([pkm.species for pkm in self.pokemon])
 
     def __str__(self):
         return '\n============\n'.join([str(pkm) for pkm in self.pokemon])

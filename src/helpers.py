@@ -40,6 +40,14 @@ def get_enemy_id_from_player_id(player_id):
     else:
         return -1
 
+def index_to_player_id(player_index):
+    if player_index == 0:
+        return 'p1'
+    elif player_index == 1:
+        return 'p2'
+    else:
+        return ''
+
 # Singleton class taken from https://michaelgoerz.net/notes/singleton-objects-in-python.html
 
 class Singleton(type):

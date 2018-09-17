@@ -13,14 +13,14 @@ class Pokemon:
     Pokemon class.
     Handle everything corresponding to it.
     """
-    def __init__(self, battle, name, condition, active, level):
+    def __init__(self, battle, species, condition, active, level):
         """
         Init Pokemon method.
         :param name: name of Pokemon.
         :param condition: ### TODO ###
         :param active: Bool.
         """
-        self.name = name
+        self.species = species
         self.battle = battle
         self.current_health = 0
         self.max_health = 0
@@ -50,7 +50,7 @@ class Pokemon:
         """
         Load every information of pokemon from datafiles and store them
         """
-        print("Loading unknown Pokemon " + self.name)
+        print("Loading unknown Pokemon " + self.species)
         infos = json_loader.pokemon_from_json(self)
         self.types = infos["types"]
         self.abilities = infos["possibleAbilities"]
@@ -65,7 +65,7 @@ class Pokemon:
         :param stats: Dict. {hp, atk, def, spa, spd, spe}
         :param moves: Array. Not used.
         """
-        print("Loading known Pokemon " + self.name)
+        print("Loading known Pokemon " + self.species)
         infos = json_loader.pokemon_from_json(self)
         self.types = infos["types"]
         self.abilities = abilities
@@ -184,11 +184,27 @@ class Pokemon:
         """
         return self.buff[stat][1]
 
+    def get_set_object(self):
+        pokemon_set = {
+            "species": self.species,
+            "item": self.item,
+            "level": self.level,
+            "moves": []
+        }
+
+        if len(self.abilities) == 1:
+            pokemon_set["ability"] = self.abilities[0]
+
+        for move in self.moves:
+            pokemon_set["moves"].append(move.id)
+
+        return pokemon_set
+
     def __repr__(self):
         return str(vars(self))
 
     def __str__(self):
-        output = self.name + " (" + str(self.status) + ")"
+        output = self.species + " (" + str(self.status) + ")"
         if not self.is_fainted():
             output += "\n" + str(self.current_health) + "/" + str(self.max_health)
         if self.level < 100:

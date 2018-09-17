@@ -50,7 +50,6 @@ async def filter_server_messages(websocket, message):
                 await match.new_turn(current[2])
             elif current[1] == "callback":
                 if current[2] == "cant":
-                    print(line)
                     await match.cant_take_action(current[5])
                 elif current[2] == "trapped":
                     print(line)

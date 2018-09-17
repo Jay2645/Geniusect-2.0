@@ -48,10 +48,10 @@ def make_best_switch(battle, force_switch):
     effi = -1024
     for pokemon in team.pokemon:
         if pokemon is team.active():
-            print("Not switching to " + pokemon.name + " as it is already active")
+            print("Not switching to " + pokemon.species + " as it is already active")
             continue
         elif pokemon.is_fainted():
-            print("Not switching to " + pokemon.name + " as it has fainted")
+            print("Not switching to " + pokemon.species + " as it has fainted")
             continue
 
         # Entry hazards
@@ -77,11 +77,11 @@ def make_best_switch(battle, force_switch):
                     if poison_effi > 0:
                         our_effi /= (team.entry_hazards["toxic_spikes"] * 1.25)
         
-        print("Looking to switch to " + pokemon.name + ", with an efficiency of " + str(our_effi) + " (best so far: " + str(effi) + ")")
+        print("Looking to switch to " + pokemon.species + ", with an efficiency of " + str(our_effi) + " (best so far: " + str(effi) + ")")
         if our_effi > effi:
             best_pkm = pokemon
             effi = our_effi
-    print("Our best switch right now is a switch to " + pokemon.name +", with a weight of " + str(effi))
+    print("Our best switch right now is a switch to " + pokemon.species +", with a weight of " + str(effi))
     try:
         return team.pokemon.index(best_pkm) + 1, effi
     except ValueError:

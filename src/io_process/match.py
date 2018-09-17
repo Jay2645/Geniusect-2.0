@@ -173,7 +173,7 @@ class Match:
         plan_text = ""
 
         if best_switch >= 0:
-            plan_text = "Making a switch to " + self.battle.teams[player_id_to_index(self.battle.player_id)].pokemon[best_switch - 1].name
+            plan_text = "Making a switch to " + self.battle.teams[player_id_to_index(self.battle.player_id)].pokemon[best_switch - 1].species
         else:
             raise RuntimeError("Could not determine a Pokemon to switch to.")
         

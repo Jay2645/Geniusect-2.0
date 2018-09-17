@@ -172,7 +172,7 @@ def effi_move(battle, move, pkm1, pkm2, team):
 
     modified_weight = weight * accuracy
     if pkm1.team.is_bot and pkm1.active:
-        print("Assigning a weight of " + str(modified_weight) + " for " + pkm1.name + "'s " + move.name + " "+str(weight) + " plus " + str(accuracy))
+        print("Assigning a weight of " + str(modified_weight) + " for " + pkm1.species + "'s " + move.name + " "+str(weight) + " plus " + str(accuracy))
     return modified_weight
 
 
@@ -208,7 +208,7 @@ def effi_pkm(battle, pkm1, pkm2, is_forced_switch):
         # This is the damage we'd take on the turn we switch in
         pkm2_hp -= effi1
         if pkm2_hp <= 0:
-            print(pkm2.name + " will be killed in a switch by " + pkm1.name + " using " + pkm1_move_name)
+            print(pkm2.species + " will be killed in a switch by " + pkm1.species + " using " + pkm1_move_name)
             return 0
 
     # @TODO: Move this to its own function
@@ -232,7 +232,7 @@ def effi_pkm(battle, pkm1, pkm2, is_forced_switch):
     pkm1_hp -= effi2
     if pkm1_hp <= 0 and pkm1_spe > pkm2_spe:
         # We killed them!
-        print(pkm2.name + " will survive a switch and then outspeed and kill " + pkm1.name + " using " + pkm2_move_name)
+        print(pkm2.species + " will survive a switch and then outspeed and kill " + pkm1.species + " using " + pkm2_move_name)
         return effi2
     else:
         # We won't outspeed, so we'll take damage first
@@ -249,8 +249,8 @@ def effi_pkm(battle, pkm1, pkm2, is_forced_switch):
 
     speed_status = "will outspeed" if pkm1_spe > pkm2_spe else "will survive a hit"
 
-    print("After a switch, " + pkm1.name + " (attacker) " + speed_status + " and use move " + pkm1_move_name + " with " + str(pkm1_hp_percent) + "% HP (" + str(pkm1_hp) + "/" + str(pkm1_max_hp) + ")")
-    print(pkm2.name + " (defender) will use move " + pkm2_move_name + " and have " + str(pkm2_hp_percent) + "% HP (" + str(pkm2_hp) + "/" + str(pkm2_max_hp) + ")")
+    print("After a switch, " + pkm1.species + " (attacker) " + speed_status + " and use move " + pkm1_move_name + " with " + str(pkm1_hp_percent) + "% HP (" + str(pkm1_hp) + "/" + str(pkm1_max_hp) + ")")
+    print(pkm2.species + " (defender) will use move " + pkm2_move_name + " and have " + str(pkm2_hp_percent) + "% HP (" + str(pkm2_hp) + "/" + str(pkm2_max_hp) + ")")
 
     # Return the difference between how much damage we do and how much damage they do
     delta = pkm2_hp_percent - pkm1_hp_percent
