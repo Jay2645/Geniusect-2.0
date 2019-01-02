@@ -4,6 +4,8 @@ Battle bot for the Pokemon simulator [Pokemon Showdown](http://pokemonshowdown.c
 
 Original bot was forked from [Synedh](https://github.com/Synedh/showdown-battle-bot) and has been heavily modified.
 
+[![No Maintenance Intended](http://unmaintained.tech/badge.svg)](http://unmaintained.tech/)
+
 ### Requirements
 - asyncio
 - websockets
