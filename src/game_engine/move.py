@@ -78,6 +78,8 @@ class Move(Entity):
         self.id = str.replace(self.id, "60", "")
 
         # Grab move data
+        if self.id == "return102":
+            self.id = "return"
         movedex = json_loader.moves[self.id]
 
         # Load and populate entity data

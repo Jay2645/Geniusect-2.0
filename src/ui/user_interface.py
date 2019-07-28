@@ -167,6 +167,7 @@ class UserInterface(metaclass=Singleton):
             object = self.msg_queue.get_nowait()
             if not self.__create_match_window(object):
                 # We can pass exceptions into the queue as well
+                self.close_windows()
                 raise object
         except queue.Empty:
             pass

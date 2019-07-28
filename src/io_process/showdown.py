@@ -11,6 +11,7 @@ from src.io_process.match import Match
 from src.ui.user_interface import UserInterface
 
 avatar = 117
+MAX_FIGHT_COUNT = 4
 
 def shutdown_showdown():
     print("Shutting down Pokemon Showdown!")
@@ -90,26 +91,39 @@ class Showdown(metaclass=Singleton):
                                 'pass': self.password,
                                 'challstr': challid + "%7C" + chall
                              })
+        if resp.status_code != 200:
+            raise ConnectionError(f"Request failed with status code {resp.status_code}. Details: {resp.reason}")
         ui = UserInterface()
         ui.on_logged_in(self.username)
 
         await senders.set_nickname(self.websocket, self.username, resp.text[1:])
         await senders.set_avatar(self.websocket, avatar)
+        print("Showdown connection successful, ready for battle!")
+
+        await self.search_for_fights()
 
     async def search_for_fights(self):
-        # Once we are connected.
-        
-        ui = UserInterface()
-        challenge_mode = ui.get_selected_challenge_mode()
+        if not self.allow_new_matches:
+            # No more matches
+            return
 
+        # Once we are connected.
         challenge_format = self.formats[0]
-        if challenge_mode == 1:
-            challenge_player = ui.get_challenger_name()
-            print("Challenging " + challenge_player + " using " + challenge_format)
-            await senders.challenge(self.websocket, challenge_player, self.formats[0])
-        elif challenge_mode == 2:
-            print("Searching for a match on the " + challenge_format + " ladder.")
-            await senders.searching(self.websocket, challenge_format)
+
+        if MAX_FIGHT_COUNT <= 0 or (self.wins + self.losses) < MAX_FIGHT_COUNT:
+            ui = UserInterface()
+            challenge_mode = ui.get_selected_challenge_mode()
+            if challenge_mode == 1:
+                challenge_player = ui.get_challenger_name()
+                print("Challenging " + challenge_player + " using " + challenge_format)
+                await senders.challenge(self.websocket, challenge_player, self.formats[0])
+            elif challenge_mode == 2:
+                print("Searching for a match on the " + challenge_format + " ladder.")
+                await senders.searching(self.websocket, challenge_format)
+            else:
+                print("Awaiting challengers...")
+        else:
+            print(f"All done! Win:Loss ratio: {self.wins}:{self.losses}")
 
     def check_battle(self, battle_id) -> Match or None:
         """
@@ -140,16 +154,15 @@ class Showdown(metaclass=Singleton):
 
         print("Game is over")
 
-        if self.forfeit_exception is None:
-            await senders.leaving(self.websocket, battle.battle_id)
-        else:
+        if self.forfeit_exception is not None:
             await senders.sendmessage(self.websocket, battle.battle_id, "Oops, I crashed! Exception data: " + str(type(self.forfeit_exception)) + ": " + str(self.forfeit_exception) + ". You win!")
         
+        await senders.leaving(self.websocket, battle.battle_id)
         self.battles.remove(battle)
         if self.forfeit_exception is None:
             ui = UserInterface()
             ui.match_over(battle.battle_id)
-        await senders.leaving(self.websocket, battle.battle_id)
+            await self.search_for_fights()
 
     async def deinit_game(self):
         if self.forfeit_exception is not None:
@@ -159,11 +172,8 @@ class Showdown(metaclass=Singleton):
     def forfeit_all_matches(self, exception=None):
         if self.forfeit_exception is None:
             self.forfeit_exception = exception
-
-        if self.forfeit_exception is not None:
-            return
         
-        print("Exiting everything")
+        print("We hit an exception; exiting everything")
         self.forfeit_exception = exception
         self.allow_new_matches = False
 

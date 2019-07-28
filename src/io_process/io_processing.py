@@ -55,7 +55,8 @@ async def filter_server_messages(websocket, message):
                     await match.must_make_move(websocket)
             elif current[1] == "win":
                 # Someone won the game!
-                await match.game_is_over(websocket, current[2])
+                if match is not None:
+                    await match.game_is_over(websocket, current[2])
             elif current[1] == "inactive":
                 if match is not None:
                     match.set_turn_timer(''.join(c for c in current[2] if c.isdigit()))
@@ -161,11 +162,10 @@ async def string_to_action(websocket, message):
             # Battle concern message.
             future = await filter_server_messages(websocket, message)
     except Exception as e:
+        login.forfeit_all_matches(e)
         print("Caught exception!")
         exc_info = sys.exc_info()
         traceback.print_exception(*exc_info)
-
-        login.forfeit_all_matches(e)
 
 def determine_showdown_error(error_reason):
     if "can't switch" in error_reason.lower():

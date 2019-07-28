@@ -20,7 +20,7 @@ def update_json(should_force_update = False):
     Update JSON files with the latest from the server
     """
 
-    should_update_json = should_force_update
+    should_update_json = should_force_update or not os.path.exists("data/formats-data.json")
 
     if not should_update_json:
         # Check to see when the file was last modified
@@ -185,8 +185,6 @@ def pokemon_from_json(pokemon_obj):
     from src.game_engine.move import Move
 
     pkm_name = pokemon_obj.name.lower().replace('-', '').replace(' ', '').replace('%', '').replace('\'', '').replace('.', '')
-    if pkm_name == 'mimikyubusted':
-        pkm_name = 'mimikyu'
 
     res = {
         "types": [],
@@ -203,14 +201,9 @@ def pokemon_from_json(pokemon_obj):
     try:
         pokemon_moves = format_moves[pkm_name]["randomBattleMoves"]
     except KeyError:
-        if pkm_name == "castform":
-            # Castform is weird
-            try:
-                pokemon_moves = format_moves["castformsunny"]["randomBattleMoves"]
-                pokemon_moves.update(format_moves["castformrainy"]["randomBattleMoves"])
-                pokemon_moves.update(format_moves["castformsnowy"]["randomBattleMoves"])
-            except KeyError:
-                raise KeyError("Castform had a weird bug")
+        if "baseSpecies" in current_pokemon:
+            base_species_name = current_pokemon["baseSpecies"].lower()
+            pokemon_moves = format_moves[base_species_name]["randomBattleMoves"]
         else:
             raise KeyError("Could not find valid moves for " + pkm_name)
     for json_move in pokemon_moves:
