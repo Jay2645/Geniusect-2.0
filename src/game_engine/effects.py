@@ -104,7 +104,7 @@ class Entity:
         self.effect_type = str(self.effect_type)
         self.exists = self.exists and self.id is not ''
 
-    def from_json(self, json_data):
+    def from_json(self, json_data : dict):
         try:
             self.id = json_data['id']
         except KeyError:

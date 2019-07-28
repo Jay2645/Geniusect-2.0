@@ -19,6 +19,7 @@ async def filter_server_messages(websocket, message):
     :param websocket: Websocket stream.
     :param message: Message received from server. Format : room|message1|message2.
     """
+    print(f"Server message: {message}")
     lines = message.splitlines()
     battle_id = lines[0].split("|")[0].split(">")[1]
     match = login.check_battle(battle_id)

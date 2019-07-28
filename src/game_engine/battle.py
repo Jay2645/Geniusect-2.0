@@ -102,7 +102,7 @@ class Battle(Entity):
         return our_team.active()
 
     @staticmethod
-    def update_status(pokemon, status: str = ""):
+    def update_status(pokemon : Pokemon, status: str = ""):
         """
         Update status problem.
         :param pokemon: Pokemon.
@@ -121,8 +121,10 @@ class Battle(Entity):
         else:
             pokemon.status = Status.healthy
 
+        print(f"{pokemon.name}'s status: {pokemon.status}")
+
     @staticmethod
-    def set_buff(pokemon, stat, quantity):
+    def set_buff(pokemon : Pokemon, stat : str, quantity : int):
         """
         Set buff to pokemon
         :param pokemon: Pokemon
@@ -134,6 +136,7 @@ class Battle(Entity):
         buff = pokemon.buff[stat][0] + quantity
         if -6 <= buff <= 6:
             pokemon.buff[stat] = [buff, modifs[str(buff)]]
+        print(f"{pokemon.name}'s {stat} is now {pokemon.buff[stat]}")
 
     def cant_take_action(self, disabled_action):
         active_pkm = self.teams[player_id_to_index(self.player_id)].active()

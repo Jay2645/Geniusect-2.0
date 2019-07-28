@@ -140,7 +140,7 @@ class Showdown(metaclass=Singleton):
                 return battle
         return None
 
-    async def create_battle(self, battle_id : str):
+    async def create_battle(self, battle_id : str) -> Match:
         if not self.allow_new_matches:
             return
 

@@ -21,9 +21,9 @@ class Status(Enum):
     frozen = 6
     fainted = 7
 
-def get_typechart():
+def get_typechart() -> dict:
     from src.io_process import json_loader
-    return json_loader.typechart
+    return json_loader.get_typechart()
 
 def get_effect(name):
     if name is None or name is "":

@@ -13,7 +13,7 @@ class Pokemon:
     Pokemon class.
     Handle everything corresponding to it.
     """
-    def __init__(self, battle, name, condition, active, level):
+    def __init__(self, battle, name : str, condition : str, active, level : int):
         """
         Init Pokemon method.
         :param name: name of Pokemon.
@@ -145,7 +145,7 @@ class Pokemon:
             return False
         return True
 
-    def update_health(self, health_string):
+    def update_health(self, health_string : str):
         health = health_string.split('/')
         try:
             self.current_health = int(health[0])
@@ -204,4 +204,8 @@ class Pokemon:
         output += "\nAbilities:" 
         for ability in self.abilities:
             output += "\n"+ability
+        output += "\nBuffs:"
+        for buff_stat in self.buff:
+            output += f"\n{buff_stat}: {self.buff[buff_stat][0]}"
+
         return output

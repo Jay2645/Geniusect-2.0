@@ -1,9 +1,10 @@
 from math import floor
 
+from src.game_engine.pokemon import Pokemon
 from src.game_engine.game_calcs import get_damage, Status
 from src.helpers import player_id_to_index
 
-def effi_boost(move, pkm1, pkm2):
+def effi_boost(move, pkm1 : Pokemon, pkm2 : Pokemon):
     """
     Calculate if boost is worth or not. Currently only working on speed.
     :param move: Json object, status move.
@@ -195,8 +196,10 @@ def effi_pkm(battle, pkm1, pkm2, is_forced_switch):
 
     pkm2_hp = floor(pkm2_max_hp * pkm2.get_hp_percent())
 
-    # Find the move the attacker will use that does the most damage
+    # Find the attacking move the attacker will use that does the most damage
     for move in pkm1.moves:
+        if move.category == "Status":
+            continue
         dmg = effi_move(battle, move, pkm1, pkm2, pkm1.team)
         if effi1 < dmg:
             pkm1_move_name = move.name
@@ -223,6 +226,8 @@ def effi_pkm(battle, pkm1, pkm2, is_forced_switch):
 
     # If we survive and outspeed, find out how much damage we will do
     for move in pkm2.moves:
+        if move.category == "Status":
+            continue
         dmg = effi_move(battle, move, pkm2, pkm1, pkm2.team)
         if effi2 < dmg:
             effi2 = dmg

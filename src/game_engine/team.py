@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from src.game_engine.pokemon import Pokemon
+
 class Team:
     """
     Team class.
@@ -21,7 +23,7 @@ class Team:
         self.reflect = False
         self.light_screen = False
 
-    def active(self):
+    def active(self) -> Pokemon or None:
         """
         Return active pokemon of Team
         :return: Pokemon
@@ -31,7 +33,7 @@ class Team:
                 return pkm
         return None
 
-    def add(self, pokemon):
+    def add(self, pokemon : Pokemon):
         """
         Add pokemon to self.pokemon array. Exit and print error message if Team is full (6 pokemon)
         :param pokemon: Pokemon
@@ -40,9 +42,9 @@ class Team:
             pokemon.team = self
             self.pokemon.append(pokemon)
         else:
-            raise IndexError("Failed to add " + pokemon.name + " : there is yet six pokemon in team :\n" + str(self))
+            raise IndexError("Failed to add " + pokemon.name + " : there is six pokemon in team :\n" + str(self))
 
-    def remove(self, pkm_name):
+    def remove(self, pkm_name : str):
         """
         Remove pokemon from self.pokemon array. Exit and print error message if pkm_name not present in self.pokemon
         :param pkm_name: Name of pokemon

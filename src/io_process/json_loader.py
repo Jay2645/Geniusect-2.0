@@ -10,21 +10,48 @@ from datetime import datetime
 
 from src.helpers import get_id
 
-pokemon = {}
-format_moves = {}
-moves = {}
-typechart = {}
+FORMATS_DATA_PATH = "data/formats-data.json"
+MOVES_PATH = "data/moves.json"
+POKEDEX_PATH = "data/pokedex.json"
+TYPECHART_PATH = "data/typechart.json"
 
-def update_json(should_force_update = False):
+FORMATS_URL = "https://play.pokemonshowdown.com/data/formats-data.js"
+MOVES_URL = "https://play.pokemonshowdown.com/data/moves.js"
+POKEDEX_URL = "https://play.pokemonshowdown.com/data/pokedex.js"
+TYPECHART_URL = "https://play.pokemonshowdown.com/data/typechart.js"
+
+ENCODING = "utf-8"
+
+_pokemon_db = {}
+_format_moves_db = {}
+_moves_db = {}
+_typechart_db = {}
+
+def get_movedex() -> dict:
+    return _moves_db
+
+def get_move(id : str) -> dict:
+    return get_movedex()[id]
+
+def get_pokedex() -> dict:
+    return _pokemon_db
+
+def get_typechart() -> dict:
+    return _typechart_db
+
+def get_format_moves() -> dict:
+    return _format_moves_db
+
+def update_json(should_force_update : bool = False):
     """
     Update JSON files with the latest from the server
     """
 
-    should_update_json = should_force_update or not os.path.exists("data/formats-data.json")
+    should_update_json = should_force_update or not os.path.exists(FORMATS_DATA_PATH)
 
     if not should_update_json:
         # Check to see when the file was last modified
-        last_modification_time = datetime.fromtimestamp(os.stat("data/formats-data.json").st_mtime)
+        last_modification_time = datetime.fromtimestamp(os.stat(FORMATS_DATA_PATH).st_mtime)
         # If we've already modified today, don't bother updating it
         should_update_json = datetime.today().date() != last_modification_time.date()
             
@@ -35,9 +62,8 @@ def update_json(should_force_update = False):
         pattern = re.compile(r'([{,])([a-zA-Z0-9-]+):')
         js_pattern = re.compile(r'.+= ')
 
-        formats_url = "https://play.pokemonshowdown.com/data/formats-data.js"
-        formats_request = requests.get(formats_url)
-        formats = open("data/formats-data.json", "w+", encoding='utf-8')
+        formats_request = requests.get(FORMATS_URL)
+        formats = open(FORMATS_DATA_PATH, "w+", encoding=ENCODING)
         # These are Javascript files; we need to get everything between the 
         # equals sign and the first semicolon
         formats_string = re.sub(js_pattern, "", formats_request.text, 1)[:-1]
@@ -47,31 +73,28 @@ def update_json(should_force_update = False):
         formats.close()
         print("Formats updated")
 
-        moves_url = "https://play.pokemonshowdown.com/data/moves.js"
-        moves_request = requests.get(moves_url)
+        moves_request = requests.get(MOVES_URL)
         moves_string = re.sub(js_pattern, "", moves_request.text, 1)[:-1]
         moves_string = re.sub(pattern, r'\g<1>"\g<2>":', moves_string)
-        moves = open("data/moves.json", "w+", encoding='utf-8')
-        moves.write(moves_string)
-        moves.close()
+        _moves_db = open(MOVES_PATH, "w+", encoding=ENCODING)
+        _moves_db.write(moves_string)
+        _moves_db.close()
         print("Move list updated")
 
-        pokedex_url = "https://play.pokemonshowdown.com/data/pokedex.js"
-        pokedex_request = requests.get(pokedex_url)
-        pokedex = open("data/pokedex.json", "w+", encoding='utf-8')
+        pokedex_request = requests.get(POKEDEX_URL)
+        pokedex = open(POKEDEX_PATH, "w+", encoding=ENCODING)
         pokedex_string = re.sub(js_pattern, "", pokedex_request.text, 1)[:-1]
         pokedex_string = re.sub(pattern, r'\g<1>"\g<2>":', pokedex_string)
         pokedex.write(pokedex_string)
         pokedex.close()
         print("Pokedex updated")
 
-        typechart_url = "https://play.pokemonshowdown.com/data/typechart.js"
-        typechart_request = requests.get(typechart_url)
-        typechart = open("data/typechart.json", "w+", encoding='utf-8')
+        typechart_request = requests.get(TYPECHART_URL)
+        _typechart_db = open(TYPECHART_PATH, "w+", encoding=ENCODING)
         typechart_string = re.sub(js_pattern, "", typechart_request.text, 1)[:-1]
         typechart_string = re.sub(pattern, r'\g<1>"\g<2>":', typechart_string)
-        typechart.write(typechart_string)
-        typechart.close()
+        _typechart_db.write(typechart_string)
+        _typechart_db.close()
         print("Typechart updated")
 
     load_json()
@@ -79,27 +102,27 @@ def update_json(should_force_update = False):
 def load_json():
     print("Validating JSON")
 
-    global pokemon
-    global format_moves
-    global moves
-    global typechart
+    global _pokemon_db
+    global _format_moves_db
+    global _moves_db
+    global _typechart_db
 
-    with open('data/pokedex.json', encoding='utf-8') as pokedex_file:
-        pokemon = json.load(pokedex_file)
+    with open(POKEDEX_PATH, encoding=ENCODING) as pokedex_file:
+        _pokemon_db = json.load(pokedex_file)
     print("Pokedex OK")
-    with open('data/formats-data.json') as formats_file:
-        format_moves = json.load(formats_file)
+    with open(FORMATS_DATA_PATH) as formats_file:
+        _format_moves_db = json.load(formats_file)
     print("Battle formats OK")
-    with open("data/moves.json") as moves_file:
-        moves = json.load(moves_file)
+    with open(MOVES_PATH) as moves_file:
+        _moves_db = json.load(moves_file)
     print("Moves OK")
-    with open("data/typechart.json") as typechart_file:
-        typechart = json.load(typechart_file)
+    with open(TYPECHART_PATH) as typechart_file:
+        _typechart_db = json.load(typechart_file)
     print("Typechart OK")
         
     print("All JSON has been loaded!")
 
-def request_loader(server_json, battle):
+def request_loader(server_json : str, battle) -> dict:
     """
     Parse and translate json send by server. Reload bot team. Called each turn.
     :param req: json sent by server.
@@ -152,17 +175,16 @@ def request_loader(server_json, battle):
     return output
 
         
-def team_from_json(pkm_team, battle):
-    from src.game_engine.team import Team
+def team_from_json(pkm_team : dict, battle):
     from src.game_engine.pokemon import Pokemon
     from src.game_engine.move import Move
+    from src.game_engine.team import Team
 
     team = Team(battle)
     for pkm in pkm_team["pokemon"]:
         try:
-            newpkm = Pokemon(battle, pkm['details'].split(',')[0], pkm['condition'], pkm['active'],
-                                pkm['details'].split(',')[1].split('L')[1]
-                                if len(pkm['details']) > 1 and 'L' in pkm['details'] else 100)
+            level = int(pkm['details'].split(',')[1].split('L')[1]) if len(pkm['details']) > 1 and 'L' in pkm['details'] else 100
+            newpkm = Pokemon(battle, pkm['details'].split(',')[0], pkm['condition'], pkm['active'], level)
             moveset = []
             for json_move in pkm['moves']:
                 move = Move({"id":json_move}, newpkm)
@@ -175,9 +197,9 @@ def team_from_json(pkm_team, battle):
 
     return team
 
-def pokemon_from_json(pokemon_obj):
+def pokemon_from_json(pokemon_obj) -> dict:
     """
-    Filtrate, regroup and translate data from json files.
+    Filter, regroup and translate data from json files.
     :param pkm_name: Pokemon's name
     :return: Dict. {types, possibleAbilities, baseStats, possibleMoves}
     """
@@ -192,17 +214,17 @@ def pokemon_from_json(pokemon_obj):
         "possibleMoves": []
     }
 
-    current_pokemon = pokemon[pkm_name]
+    current_pokemon = _pokemon_db[pkm_name]
     res["types"] = current_pokemon["types"]
     res["possibleAbilities"] = list(current_pokemon["abilities"].values())
     res["baseStats"] = current_pokemon["baseStats"]
     
     try:
-        pokemon_moves = format_moves[pkm_name]["randomBattleMoves"]
+        pokemon_moves = _format_moves_db[pkm_name]["randomBattleMoves"]
     except KeyError:
         if "baseSpecies" in current_pokemon:
             base_species_name = current_pokemon["baseSpecies"].lower()
-            pokemon_moves = format_moves[base_species_name]["randomBattleMoves"]
+            pokemon_moves = _format_moves_db[base_species_name]["randomBattleMoves"]
         else:
             raise KeyError("Could not find valid moves for " + pkm_name)
     for json_move in pokemon_moves:

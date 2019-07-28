@@ -80,10 +80,10 @@ class Move(Entity):
         # Grab move data
         if self.id == "return102":
             self.id = "return"
-        movedex = json_loader.moves[self.id]
+        move = json_loader.get_move(self.id)
 
         # Load and populate entity data
-        super().__init__(movedex)
+        super().__init__(move)
         
         # Load from given JSON
         try:
@@ -99,11 +99,11 @@ class Move(Entity):
         self.ignore_positive_defensive = False
         self.z_broke_protect = False
 
-    def from_json(self, movedex):
-        super().from_json(movedex)
+    def from_json(self, move_dict : dict):
+        super().from_json(move_dict)
 
         try:
-            our_flags = movedex['flags']
+            our_flags = move_dict['flags']
             self.flags = MoveFlag.none
             for flag in our_flags:
                 # Add the flag to our list of flags
@@ -113,7 +113,7 @@ class Move(Entity):
             pass
 
         try:
-            self.pp = movedex['pp']
+            self.pp = move_dict['pp']
         except KeyError:
             self.pp = 0
 
@@ -121,46 +121,46 @@ class Move(Entity):
             # Any boosts that get applied to THIS Pokemon, if any
             # Format: {"atk":1,"def":1,"spa":1,"spd":1,"spe":1} -- raises all stats by 1
             # Stats that won't get boosted are not listed
-            self.boosts = movedex['boosts']
+            self.boosts = move_dict['boosts']
         except KeyError:
             self.boosts = None
 
         try:
             # "Status", "Special", "Physical"
-            self.category = movedex['category']
+            self.category = move_dict['category']
         except KeyError:
             self.category = None
 
         try:
             # How the defender should take this move (i.e. Psyshock is a special move that does physical damage)
-            self.defensive_category = movedex['defensiveCategory']
+            self.defensive_category = move_dict['defensiveCategory']
         except KeyError:
             # If not defined, the defensive category matches the "normal" category
             self.defensive_category = self.category
 
         try:
             # The type of this move
-            self.type = movedex['type']
+            self.type = move_dict['type']
         except KeyError:
             self.type = None
 
         try:
             # Any secondary effects that happen after this move happens.
             # Format: {"chance":10,"self":{"boosts":{"atk":1,"def":1,"spa":1,"spd":1,"spe":1}}}
-            self.secondary = movedex['secondary']
+            self.secondary = move_dict['secondary']
         except KeyError:
             self.secondary = None
 
         try:
             # The target of this move
-            self.target = movedex['target']
+            self.target = move_dict['target']
         except KeyError:
             self.target = None
 
         try:
             # Should this move hit things which would normally be immune?
             # This can be a bool or a list of types it hits.
-            can_ignore_immunity = movedex['ignoreImmunity']
+            can_ignore_immunity = move_dict['ignoreImmunity']
             if type(can_ignore_immunity) is not dict:
                 self.ignore_immunity = can_ignore_immunity
             else:
@@ -170,12 +170,12 @@ class Move(Entity):
 
         try:
             # The base power of this move
-            self.base_power = movedex['basePower']
+            self.base_power = move_dict['basePower']
         except KeyError:
             self.base_power = 0
 
         try:
-            damage_type = movedex['damage']
+            damage_type = move_dict['damage']
             self.does_damage_based_on_level = damage_type == "level"
             try:
                 self.constant_damage_amount = int(damage_type)
@@ -187,7 +187,7 @@ class Move(Entity):
 
         try:
             # Range of how many times this move will hit, i.e. [2, 5]
-            self.multihit = movedex['multihit']
+            self.multihit = move_dict['multihit']
         except KeyError:
             self.multihit = []
 
@@ -195,13 +195,13 @@ class Move(Entity):
             # Any extra effects that happen after this move is used
             # For example, Aqua Ring heals the user's HP every turn
             # Format: {"onResidualOrder":6}
-            self.effect = movedex['effect']
+            self.effect = move_dict['effect']
         except KeyError:
             self.effect = None
 
         try:
             # The accuracy of the move
-            our_accuracy = int(movedex['accuracy'])
+            our_accuracy = int(move_dict['accuracy'])
             if our_accuracy is 1:
                 # Accuracy can be listed as "True" sometimes (meaning the move will never miss)
                 our_accuracy = 101
@@ -212,49 +212,49 @@ class Move(Entity):
         try:
             # The priority of this move.
             # 0 means "normal" priority
-            self.priority = movedex['priority']
+            self.priority = move_dict['priority']
         except KeyError:
             self.priority = 0
 
         try:
-            self.one_hit_ko = movedex['ohko']
+            self.one_hit_ko = move_dict['ohko']
         except KeyError:
             self.one_hit_ko = False
 
         try:
-            self.critical_hit_ratio = movedex['critRatio']
+            self.critical_hit_ratio = move_dict['critRatio']
         except KeyError:
             self.critical_hit_ratio = 1
 
         try:
-            self.will_crit = movedex['willCrit']
+            self.will_crit = move_dict['willCrit']
         except KeyError:
             self.will_crit = False
 
         try:
-            self.crit_modifier = movedex['critModifier']
+            self.crit_modifier = move_dict['critModifier']
         except KeyError:
             self.crit_modifier = 1.5
 
         try:
-            self.use_defender_offensive_stat = movedex['useTargetOffensive']
+            self.use_defender_offensive_stat = move_dict['useTargetOffensive']
         except KeyError:
             self.use_defender_offensive_stat = False
 
         try:
-            self.use_attacker_defense_stat = movedex['useSourceDefensive']
+            self.use_attacker_defense_stat = move_dict['useSourceDefensive']
         except KeyError:
             self.use_attacker_defense_stat = False
 
         try:
             # Any extra volatile status, like Substitutes
             # Format: "Substitute", "partiallytrapped", etc.
-            self.volatile_status = movedex['volatileStatus']
+            self.volatile_status = move_dict['volatileStatus']
         except KeyError:
             self.volatile_status = None
 
         try:
-            if movedex['isZ'] is not "":
+            if move_dict['isZ'] is not "":
                 self.is_z_move = True
             else:
                 self.is_z_move = False
@@ -262,22 +262,22 @@ class Move(Entity):
             self.is_z_move = False
 
         try:
-            self.z_move_power = movedex['zMovePower']
+            self.z_move_power = move_dict['zMovePower']
         except KeyError:
             self.z_move_power = 0
 
         try:
-            self.z_move_boost = movedex['zMoveBoost']
+            self.z_move_boost = move_dict['zMoveBoost']
         except KeyError:
             self.z_move_boost = None
 
         try:
-            self.ignore_defensive = movedex['ignoreDefensive']
+            self.ignore_defensive = move_dict['ignoreDefensive']
         except KeyError:
             self.ignore_defensive = False
 
         try:
-            self.ignore_offensive = movedex['ignoreOffensive']
+            self.ignore_offensive = move_dict['ignoreOffensive']
         except KeyError:
             self.ignore_offensive = False
 

@@ -80,13 +80,15 @@ class TraditionalAI(AI):
                         if poison_effi > 0:
                             our_effi /= (team.entry_hazards["toxic_spikes"] * 1.25)
             
+            print(f"Assigning a weight of {our_effi} to switching to {pokemon.name}")
+
             if our_effi > effi:
                 best_pkm = pokemon
                 effi = our_effi
-        print("Our best switch right now is a switch to " + pokemon.name +", with a weight of " + str(effi))
         try:
+            print("Our best switch right now is a switch to " + best_pkm.name +", with a weight of " + str(effi))
             return team.pokemon.index(best_pkm) + 1, effi
-        except ValueError:
+        except (ValueError, AttributeError):
             return None, -1024
 
 

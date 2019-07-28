@@ -35,14 +35,14 @@ def minor_actions(battle: Battle, split_line):
     enemy_team = battle.teams[get_enemy_id_from_player_id(battle.player_id)]
 
     if split_line[0] == "-fail":
-        pass
+        print("But it failed!")
     elif split_line[0] == "-damage":
         if battle.player_id in split_line[1]:
             bot_team.active().update_health(split_line[2])
         else:
             enemy_team.active().update_health(split_line[2])
     elif split_line[0] == "-heal":
-        pass
+        print(f"{split_line[1]} healed to {split_line[2]}")
     elif split_line[0] == "-status":
         if battle.player_id in split_line[1]:
             battle.update_status(bot_team.active(), split_line[2])
@@ -54,17 +54,24 @@ def minor_actions(battle: Battle, split_line):
         else:
             battle.update_status(enemy_team.active())
     elif split_line[0] == "-cureteam":
+        # TODO: Cure entire team
         pass
     elif split_line[0] == "-boost":
+        boost_amount = int(split_line[3])
+        stat = split_line[2]
         if battle.player_id in split_line[1]:
-            battle.set_buff(bot_team.active(), split_line[2], int(split_line[3]))
+            pkm = bot_team.active()
         else:
-            battle.set_buff(enemy_team.active(), split_line[2], int(split_line[3]))
+            pkm = enemy_team.active()
+        battle.set_buff(pkm, stat, boost_amount)
     elif split_line[0] == "-unboost":
+        boost_amount = -1 * int(split_line[3])
+        stat = split_line[2]
         if battle.player_id in split_line[1]:
-            battle.set_buff(bot_team.active(), split_line[2], - int(split_line[3]))
+            pkm = bot_team.active()
         else:
-            battle.set_buff(enemy_team.active(), split_line[2], - int(split_line[3]))
+            pkm = enemy_team.active()
+        battle.set_buff(pkm, stat, boost_amount)
     elif split_line[0] == "-weather":
         pass
     elif split_line[0] == "-fieldstart":
@@ -151,13 +158,15 @@ def minor_actions(battle: Battle, split_line):
                 enemy_team.entry_hazards["sticky_web"] = 0
                 print("Sticky Web has been removed from the enemy side!")
     elif split_line[0] == "-crit":
-        pass
+        print("A critical hit!")
     elif split_line[0] == "-supereffective":
-        pass
+        print("It's super-effective!")
     elif split_line[0] == "-resisted":
-        pass
+        print("It's not very effective...")
     elif split_line[0] == "-immune":
-        pass
+        print("It had no effect!")
+    elif split_line[0] == "-miss":
+        print("But it missed!")
     elif split_line[0] == "-item":
         if battle.player_id in split_line[1]:
             bot_team.active().item = split_line[2].lower().replace(" ", "")
@@ -198,6 +207,8 @@ def minor_actions(battle: Battle, split_line):
             else:
                 enemy_team.active().substitute = False
         pass
+    elif split_line[0] == "-hitcount":
+        print(f"Hit {split_line[2]} times.")
     else:
         print("Could not process minor action:" + str(split_line))
         pass
