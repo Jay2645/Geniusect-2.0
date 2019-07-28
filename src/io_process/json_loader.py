@@ -120,7 +120,6 @@ def request_loader(server_json, battle):
     # Update our list of moves with metadata about whether they can be used
     if active_moves is not None and active_pkm is not None:
         move_data = active_moves[0]['moves']
-        print("Active move data: " + str(move_data))
         for i in range(len(active_pkm.moves)):
             found_move = False
             for j in range(len(move_data)):

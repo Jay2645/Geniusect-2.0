@@ -172,7 +172,7 @@ def effi_move(battle, move, pkm1, pkm2, team):
 
     modified_weight = weight * accuracy
     if pkm1.team.is_bot and pkm1.active:
-        print("Assigning a weight of " + str(modified_weight) + " for " + pkm1.name + "'s " + move.name + " "+str(weight) + " plus " + str(accuracy))
+        print("Assigning a weight of " + str(modified_weight) + " for " + pkm1.name + "'s " + move.name + " (" + str(weight) + " times " + str(accuracy) + ")")
     return modified_weight
 
 

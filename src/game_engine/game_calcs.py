@@ -232,7 +232,6 @@ def modify_damage(base_damage, battle, attacker, defender, move, is_crit, best_c
     # @TODO: Doubles support, spread hit
 
     base_damage = battle.run_event('WeatherModifyDamage', attacker, defender, move, base_damage)
-    print("Base damage: " + str(base_damage))
 
     if is_crit:
         base_damage *= move.crit_modifier

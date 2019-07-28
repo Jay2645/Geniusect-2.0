@@ -38,7 +38,6 @@ async def sender(websocket, room, message1, message2=None):
     with open("outlog.txt", "a", encoding='utf-8') as log_file:
         log_file.write("\n" + string)
     await websocket.send(string)
-    print(f"Sent {string}")
 
 async def searching(websocket, form):
     """
