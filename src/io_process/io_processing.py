@@ -1,101 +1,19 @@
 #!/usr/bin/env python3
+import json
 import traceback
 import sys
 
-from src.io_process import senders, json_loader
+from random import randint
+from src.io_process import senders
 from src.errors import CantSwitchError, MustSwitchError, BattleCrashedError, NoPokemonError, InvalidMoveError, InvalidTargetError, MegaEvolveError
 from src.io_process.showdown import Showdown
-from src.io_process.battlelog_parsing import battlelog_parsing
 from src.ui.user_interface import UserInterface
 
 nb_fights_max = 2
 nb_fights_simu_max = 1
 nb_fights = 0
+
 login = Showdown()
-
-async def filter_server_messages(websocket, message):
-    """
-    Main in fuction. Filter every message sent by server and launch corresponding function.
-    :param websocket: Websocket stream.
-    :param message: Message received from server. Format : room|message1|message2.
-    """
-    print(f"Server message: {message}")
-    lines = message.splitlines()
-    battle_id = lines[0].split("|")[0].split(">")[1]
-    match = login.check_battle(battle_id)
-
-    for line in lines[1:]:
-        try:
-            current = line.split('|')
-            if current[1] == "init":
-                # Creation of the battle
-                match = await login.create_battle(battle_id)
-            elif current[1] == "error":
-                # Showdown had an error of some kind
-                determine_showdown_error(current[2])
-            elif current[1] == "player":
-                # Gives us info about our current player
-                match.set_player_name(current[2], current[3])
-            elif current[1] == "teamsize":
-                match.set_team_size(current[2], current[3])
-            elif current[1] == "gen":
-                match.set_generation(current[2])
-            elif current[1] == "tier":
-                match.set_tier(current[2])
-            elif current[1] == "request":
-                if current[2] != "":
-                    await match.recieved_request(current[2])
-            elif current[1] == "turn":
-                await match.new_turn(current[2])
-            elif current[1] == "callback":
-                if current[2] == "cant":
-                    print(line)
-                    await match.cant_take_action(current[5])
-                elif current[2] == "trapped":
-                    print(line)
-                    await match.must_make_move(websocket)
-            elif current[1] == "win":
-                # Someone won the game!
-                if match is not None:
-                    await match.game_is_over(websocket, current[2])
-            elif current[1] == "inactive":
-                if match is not None:
-                    match.set_turn_timer(''.join(c for c in current[2] if c.isdigit()))
-            elif current[1] == "j" and match is not None:
-                # User joined
-                if login.username.lower() not in current[2].lower():
-                    await match.new_player_joined(websocket, current[2])
-            elif current[1] == "title" and match is not None:
-                # Match title
-                match.set_title(current[2])
-            elif current[1] == "rule":
-                match.add_rule(current[2])
-            elif current[1] == "l":
-                # User left
-                pass
-            elif current[1] == "c":
-                # User made a comment
-                pass
-            elif current[1] == "upkeep":
-                # Just keeping the connection active
-                pass
-            elif current[1] == "deinit":
-                # Leaving the room
-                pass
-            elif match is not None:
-                # Send to battlelog parser.
-                battlelog_parsing(match.battle, current[1:])
-            else:
-                print("Could not parse message: " + line)
-        except IndexError:
-            pass
-        except InvalidMoveError:
-            print("Invalid move!")
-            print(str(match.battle.get_active_pokemon().moves))
-            raise
-        except CantSwitchError:
-            # We get a callback telling us we can't switch
-            pass
 
 async def string_to_action(websocket, message):
     """
@@ -168,6 +86,52 @@ async def string_to_action(websocket, message):
         exc_info = sys.exc_info()
         traceback.print_exception(*exc_info)
 
+async def filter_server_messages(websocket, message):
+    """
+    Main in function. Filter every message sent by server and launch corresponding function.
+    :param websocket: Websocket stream.
+    :param message: Message received from server. Format : room|message1|message2.
+    """
+    global login
+    
+    lines = message.splitlines()
+    battle_id = lines[0].split("|")[0].split(">")[1]
+
+    match = login.check_battle(battle_id)
+
+    should_send_turn = match is not None and match.get_request_id() > 0
+
+    for line in lines[1:]:
+        current = line.split('|')
+        if current[1] == "init":
+            # Creation of the battle
+            match = await login.create_battle(battle_id)
+        elif current[1] == "turn":
+            if match is not None:
+                match.new_turn()
+                should_send_turn = True
+        elif current[1] == "request":
+            if match is not None and current[2] != "":
+                json_obj = json.loads(current[2])
+                match.set_request_id(current[2], json_obj['rqid'])
+        elif current[1] == "win":
+            # Someone won the game!
+            if match is not None:
+                should_send_turn = False
+                await match.game_is_over(websocket, current[2])
+                return
+        elif current[1] == "inactive":
+            should_send_turn = False
+
+    if should_send_turn:
+        match.update_server_message(message)
+
+        print("===========================================================")
+        print(match.get_match_state())
+        print("===========================================================")
+
+        await senders.sendaction(websocket, battle_id, login.ai.make_best_action(match), match.get_request_id())
+        
 def determine_showdown_error(error_reason):
     if "can't switch" in error_reason.lower():
         raise CantSwitchError(error_reason)

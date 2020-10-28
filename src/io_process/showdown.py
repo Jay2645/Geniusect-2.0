@@ -5,17 +5,14 @@ import asyncio
 import websockets
 import sys
 
+from src.ai.random_ai import RandomAI
 from src.helpers import Singleton, singleton_object
-from src.io_process import senders, json_loader
+from src.io_process import senders
 from src.io_process.match import Match
 from src.ui.user_interface import UserInterface
 
-from src.ai.ai import AI
-from src.ai.traditional.traditional_ai import TraditionalAI
-
 avatar = 117
 MAX_FIGHT_COUNT = 4
-ai = TraditionalAI()
 
 def shutdown_showdown():
     print("Shutting down Pokemon Showdown!")
@@ -26,8 +23,6 @@ def shutdown_showdown():
         raise showdown.forfeit_exception
 
 async def create_websocket():
-    global should_shutdown
-
     from src.io_process.io_processing import string_to_action
     with open("log.txt", "a", encoding='utf-8') as log_file:
         log_file.write("\n\n\nShowdown Logs:")
@@ -60,6 +55,7 @@ class Showdown(metaclass=Singleton):
         self.forfeit_exception = None
         self.allow_new_matches = True
         self.formats = [
+            "gen8randombattle",
             "gen7randombattle",
             "gen7monotyperandombattle",
             "gen7hackmonscup",
@@ -69,6 +65,7 @@ class Showdown(metaclass=Singleton):
         ]
         self.wins = 0
         self.losses = 0
+        self.ai = RandomAI()
 
 
     def update_websocket(self, websocket):
@@ -146,7 +143,7 @@ class Showdown(metaclass=Singleton):
 
         print("Starting new battle!")
 
-        battle = Match(battle_id, ai)
+        battle = Match(battle_id)
         battle.open_match_window()
         self.battles.append(battle)
         await senders.start_timer(self.websocket, battle.battle_id)

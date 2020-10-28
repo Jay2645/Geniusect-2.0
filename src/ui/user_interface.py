@@ -94,46 +94,6 @@ class TeamFrame(ttk.Labelframe):
                 pkm_label.grid(column=i, row=0)
 
 
-class BattleWindow(Toplevel):
-    def __init__(self, master, match):
-        try:
-            battle_id = match.battle_id
-        except AttributeError:
-            return
-
-        super().__init__(master)
-        self.match = match
-        self.title(battle_id)
-
-        self.plan_label = Label(self, text="No plan yet.")
-        self.plan_label.grid(column=0,row=0)
-
-        teams = match.battle.teams
-        if teams[0].is_bot:
-            self.our_team_frame = TeamFrame(self, teams[0], "Our Team")
-            self.enemy_team_frame = TeamFrame(self, teams[1], "Enemy Team")
-        else:
-            self.our_team_frame = TeamFrame(self, teams[1], "Our Team")
-            self.enemy_team_frame = TeamFrame(self, teams[0], "Enemy Team")
-
-        self.our_team_frame.grid(column=0, row=1)
-        self.enemy_team_frame.grid(column=0, row=2)
-
-        self.update_teams(match.battle.teams)
-
-    def update_teams(self, teams):
-        our_team = teams[0] if teams[0].is_bot else teams[1]
-        enemy_team = teams[1] if teams[0].is_bot else teams[0]
-        
-        self.our_team_frame.update_team(our_team)
-        self.enemy_team_frame.update_team(enemy_team)
-
-    def update_plan(self, plan):
-        self.plan_label.configure(text=plan)
-
-    def game_over(self):
-        self.destroy()
-        
 @singleton_object
 class UserInterface(metaclass=Singleton):
     def __init__(self):
@@ -179,9 +139,6 @@ class UserInterface(metaclass=Singleton):
             battle_id = match.battle_id
         except AttributeError:
             return False
-
-        match_window = BattleWindow(self.root, match)
-        self.windows[battle_id] = match_window
         return True
 
     def update_plan(self, battle_id, plan):
