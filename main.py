@@ -1,24 +1,22 @@
 #!/usr/bin/env python3
 
 import asyncio
+import src.geniusect.config as config
 
-from src.ui.user_interface import UserInterface
-from src.io_process.showdown import shutdown_showdown, create_websocket
+from poke_env.player.random_player import RandomPlayer
+from poke_env.player_configuration import PlayerConfiguration
+from poke_env.server_configuration import ShowdownServerConfiguration
 
-should_run_headless = False
 
-def main(async_loop):
-    """
-    Loading function. Connect websocket then launch bot.
-    """
-    try:
-        if should_run_headless:
-            async_loop.run_until_complete(create_websocket())
-        else:
-            ui = UserInterface()
-            ui.run_tk(async_loop)
-    finally:
-        shutdown_showdown()
+async def main():
+    # We create a random player
+    player = RandomPlayer(
+        player_configuration=PlayerConfiguration(config.get_bot_username(), config.get_bot_password()),
+        server_configuration=ShowdownServerConfiguration
+    )
+
+    await player.send_challenges(config.get_human_username(), n_challenges=1)
+
 
 if __name__ == "__main__":
-    main(asyncio.get_event_loop())
+    asyncio.get_event_loop().run_until_complete(main())

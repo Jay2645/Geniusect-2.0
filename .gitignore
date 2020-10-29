@@ -199,3 +199,5 @@ data/
 src/id.txt
 
 *.txt
+
+secrets.cfg

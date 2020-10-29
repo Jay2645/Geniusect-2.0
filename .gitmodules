@@ -1,0 +1,3 @@
+[submodule "poke-env"]
+	path = poke-env
+	url = git@github.com:hsahovic/poke-env.git
