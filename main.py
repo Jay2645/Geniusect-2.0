@@ -3,14 +3,14 @@
 import asyncio
 import src.geniusect.config as config
 
-from poke_env.player.random_player import RandomPlayer
 from poke_env.player_configuration import PlayerConfiguration
 from poke_env.server_configuration import ShowdownServerConfiguration
+from src.geniusect.player.max_damage_player import MaxDamagePlayer
 
 
 async def main():
     # We create a random player
-    player = RandomPlayer(
+    player = MaxDamagePlayer(
         player_configuration=PlayerConfiguration(config.get_bot_username(), config.get_bot_password()),
         server_configuration=ShowdownServerConfiguration
     )
