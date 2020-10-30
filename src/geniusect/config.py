@@ -5,6 +5,10 @@ import sys
 
 import src.geniusect.update_data as updater
 
+import logging
+
+log_level=logging.INFO
+
 # Update our stored data with the most recent from the server
 updater.update_pokedex()
 updater.update_movedex()

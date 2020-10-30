@@ -200,4 +200,5 @@ src/id.txt
 
 *.txt
 
+model_*
 secrets.cfg
