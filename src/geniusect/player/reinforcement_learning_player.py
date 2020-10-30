@@ -7,10 +7,16 @@ from typing import List
 from poke_env.environment.battle import Battle
 from poke_env.player.env_player import Gen8EnvSinglePlayer
 
+import src.geniusect.config as config
+
 AVAILABLE_STATS = ["atk", "def", "spa", "spd", "spe", "evasion"]
 NUM_MOVES = 4
 
 class RLPlayer(Gen8EnvSinglePlayer):
+    async def _battle_started_callback(self, battle : Battle) -> None:
+        await self._send_message("/timer on", battle.battle_tag)
+        await self._send_message("I'm a bot! I'm probably going to crash and forfeit at some point, so be nice!", battle.battle_tag)
+
     def embed_battle(self, battle):
         # -1 indicates that the move does not have a base power
         # or is not available
@@ -76,7 +82,12 @@ class RLPlayer(Gen8EnvSinglePlayer):
 
     def compute_reward(self, battle) -> float:
         return self.reward_computing_helper(
-            battle, fainted_value=2, hp_value=1, victory_value=30
+            battle,
+            fainted_value = config.get_fainted_reward(),
+            hp_value = config.get_hp_reward(),
+            starting_value = config.get_starting_value(),
+            status_value = config.get_status_value(),
+            victory_value = config.get_victory_value()
         )
 
     def get_layer_size(self) -> int:

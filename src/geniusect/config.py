@@ -18,6 +18,9 @@ updater.update_learnset()
 secret_config = configparser.ConfigParser()
 secret_config.read(["secrets.cfg"])
 
+ai_config = configparser.ConfigParser()
+ai_config.read(["ai_variables.cfg"])
+
 def get_bot_username() -> str:
 	return secret_config.get("Bot", "Username")
 
@@ -26,3 +29,18 @@ def get_bot_password() -> str:
 
 def get_human_username() -> str:
 	return secret_config.get("Human", "Username")
+
+def get_fainted_reward() -> float:
+	return ai_config.get("Rewards", "FaintedReward")
+
+def get_hp_reward() -> float:
+	return ai_config.get("Rewards", "HPReward")
+
+def get_starting_value() -> float:
+	return ai_config.get("Rewards", "ReferenceValue")
+
+def get_status_value() -> float:
+	return ai_config.get("Rewards", "StatusReward")
+
+def get_victory_value() -> float:
+	return ai_config.get("Rewards", "VictoryReward")
