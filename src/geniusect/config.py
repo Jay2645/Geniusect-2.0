@@ -31,16 +31,25 @@ def get_human_username() -> str:
 	return secret_config.get("Human", "Username")
 
 def get_fainted_reward() -> float:
-	return ai_config.get("Rewards", "FaintedReward")
+	return float(ai_config.get("Rewards", "FaintedReward"))
 
 def get_hp_reward() -> float:
-	return ai_config.get("Rewards", "HPReward")
+	return float(ai_config.get("Rewards", "HPReward"))
 
 def get_starting_value() -> float:
-	return ai_config.get("Rewards", "ReferenceValue")
+	return float(ai_config.get("Rewards", "ReferenceValue"))
 
 def get_status_value() -> float:
-	return ai_config.get("Rewards", "StatusReward")
+	return float(ai_config.get("Rewards", "StatusReward"))
 
 def get_victory_value() -> float:
-	return ai_config.get("Rewards", "VictoryReward")
+	return float(ai_config.get("Rewards", "VictoryReward"))
+
+def get_num_training_steps() -> int:
+	return int(ai_config.get("Train", "NumTrainingSteps"))
+	
+def get_num_training_steps() -> int:
+	return int(ai_config.get("Train", "NumTrainingSteps"))
+	
+def get_num_evaluation_episodes() -> int:
+	return int(ai_config.get("Train", "NumEvaluationEpisodes"))
