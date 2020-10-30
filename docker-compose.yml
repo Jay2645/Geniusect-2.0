@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  geniusect2:
+    image: geniusect2
+    build:
+      context: .
+      dockerfile: ./Dockerfile
