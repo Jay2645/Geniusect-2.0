@@ -8,7 +8,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 RUN apt update
-RUN apt install -y gcc
+RUN apt install -y gcc gfortran libopenblas-dev liblapack-dev
 
 # Install pip requirements
 ADD requirements.txt .
