@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 import asyncio
 import src.geniusect.config as config
 
@@ -15,6 +16,8 @@ def dqn_training(player, dqn, nb_steps):
     player.complete_current_battle()
 
 if __name__ == "__main__":
+    print("Creating players")
+
     env_player = RLPlayer(battle_format="gen8randombattle")#, 
 #        player_configuration=PlayerConfiguration(config.get_bot_username(), config.get_bot_password()),
 #        server_configuration=ShowdownServerConfiguration)
@@ -22,6 +25,8 @@ if __name__ == "__main__":
     opponent = MaxDamagePlayer(battle_format="gen8randombattle")
 
     nb_steps = config.get_num_training_steps()
+
+    print("Beginning training with " + str(nb_steps) + " steps")
     
     # Training
     env_player.play_against(
@@ -29,5 +34,7 @@ if __name__ == "__main__":
         opponent=opponent,
         env_algorithm_kwargs={"dqn": env_player.dqn, "nb_steps": nb_steps},
     )
+
+    print("Training complete")
 
     env_player.evaluate_dqn()
