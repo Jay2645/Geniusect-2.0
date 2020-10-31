@@ -7,6 +7,9 @@ ENV PYTHONDONTWRITEBYTECODE=1
 # Turns off buffering for easier container logging
 ENV PYTHONUNBUFFERED=1
 
+RUN apt update
+RUN apt install gcc
+
 # Install pip requirements
 ADD requirements.txt .
 RUN python -m pip install -r requirements.txt
