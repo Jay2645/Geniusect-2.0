@@ -12,6 +12,7 @@ RUN apt install -y gcc gfortran libopenblas-dev liblapack-dev
 
 # Install pip requirements
 ADD requirements.txt .
+RUN pip install --upgrade pip
 RUN python -m pip install -r requirements.txt
 
 WORKDIR /app
