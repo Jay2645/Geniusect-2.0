@@ -1,0 +1,11 @@
+{
+    "python.autoComplete.extraPaths": [
+        "${workspaceFolder}/poke-env",
+        "${workspaceFolder}"
+    ],
+    "python.pythonPath": "C:\\Users\\disne\\AppData\\Local\\Programs\\Python\\Python37\\python.exe",
+    "python.languageServer": "Microsoft",
+    "cSpell.words": [
+        "geniusect"
+    ]
+}
