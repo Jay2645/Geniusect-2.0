@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import math
 import os
 import threading
 import _thread
@@ -10,13 +11,7 @@ import tensorflow as tf
 
 import src.geniusect.config as config
 
-from rl.agents.dqn import DQNAgent
 from rl.callbacks import Callback
-from rl.policy import LinearAnnealedPolicy, EpsGreedyQPolicy
-from rl.memory import SequentialMemory
-
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.models import Model
 
 from typing import Any, Callable, List, Optional, Tuple, Union, Set
 
@@ -37,6 +32,7 @@ from poke_env.server_configuration import ServerConfiguration
 from poke_env.teambuilder.teambuilder import Teambuilder
 from poke_env.environment.weather import Weather
 
+from src.geniusect.neural_net.dqn_history import DQNHistory
 from src.geniusect.player.max_damage_player import MaxDamagePlayer
 from src.geniusect.player.default_player import DefaultPlayer
 
@@ -44,8 +40,14 @@ AVAILABLE_STATS = ["atk", "def", "spa", "spd", "spe", "evasion", "accuracy"]
 NUM_MOVES = 4
 MOVE_MEMORY = 100
 
+CEND    = '\33[0m'
+CBLUE   = '\33[34m'
+CGREEN  = '\33[32m'
+CYELLOW = '\33[33m'
+
 tf.random.set_seed(0)
 np.random.seed(0)
+os.system('color')
 
 class RLPlayer(Gen8EnvSinglePlayer, Callback):
     def __init__(
@@ -98,44 +100,21 @@ class RLPlayer(Gen8EnvSinglePlayer, Callback):
         input_layer_size = self._get_layer_size()
         output_layer_size = len(self.action_space)
         self.model = config.build_model(input_layer_size, output_layer_size)
-
-        memory = SequentialMemory(limit=config.get_num_training_steps(), window_length=1)
-
-        # Simple epsilon greedy
-        policy = LinearAnnealedPolicy(
-            EpsGreedyQPolicy(),
-            attr="eps",
-            value_max=1.0,
-            value_min=0.05,
-            value_test=0,
-            nb_steps=config.get_num_training_steps(),
-        )
-
-        # Defining our DQN
-        self.dqn = DQNAgent(
-            model=self.model,
-            nb_actions=output_layer_size,
-            policy=policy,
-            memory=memory,
-            nb_steps_warmup=1000,
-            gamma=0.5,
-            target_model_update=1,
-            delta_clip=0.01,
-            enable_double_dqn=True,
-        )
-
-        self.dqn.compile(Adam(lr=0.00025), metrics=["mae"])
+        self.dqn = config.build_dqn(self.model, output_layer_size)
 
         self.train = train
         self.use_checkpoint = load_from_checkpoint
         self.validate = validate
+        self._validate_untrained = False
 
+        self._history = DQNHistory()
         self._timer = None
         self._last_step_start_time = time.time()
         # Only join lobbies on localhost
         self.done_joining_lobby = self.validate and "localhost" not in self._server_url
 
         self._taken_actions = np.negative(np.ones(MOVE_MEMORY))
+        self._current_opponent = ""
 
         if self.train:
             self._train()
@@ -522,34 +501,30 @@ class RLPlayer(Gen8EnvSinglePlayer, Callback):
         return os.path.join(checkpoint_dir, self.format + ".ckpt")
 
     def _get_layer_size(self) -> int:
-        return 1377
-
-    def get_model(self) -> Model:
-        return self.model
-
-    def get_dqn(self) -> DQNAgent:
-        return self.dqn
+        return 1381
 
     # This is the function that will be used to train the dqn
     def _dqn_training(self, player, dqn, nb_steps):
         cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=self._get_checkpoint_file(),
-                                                        save_weights_only=True,
-                                                        verbose=0)
-        dqn.fit(player, nb_steps=nb_steps, callbacks=[self, cp_callback])
-        print("Fit complete; finishing up battle")
+                                                            save_weights_only=True,
+                                                    verbose=0)
+        try:
+            dqn.fit(player, nb_steps=nb_steps, callbacks=[self, cp_callback, self._history])
+        except Exception:
+            pass
 
     def _train(self) -> None:
         if config.get_train_against_ladder():
-            opponent_string = "ladder"
+            self._current_opponent = "ladder"
             opponent = None
         else:
-            if self.validate:
+            if self.validate and self._validate_untrained:
                 # Run tests of untrained model
-                print("Evaluating untrained model")
+                print("Evaluating untrained model" + CYELLOW)
                 self._evaluate_dqn()
+                print(CEND)
 
-            opponent = MaxDamagePlayer(battle_format=self.format)
-            opponent_string = opponent.username
+        cached_opponent = self._current_opponent
 
         if self.use_checkpoint:
             print("Trying to load from checkpoint")
@@ -560,23 +535,42 @@ class RLPlayer(Gen8EnvSinglePlayer, Callback):
             
                 if self.validate:
                     # Run tests of loaded model
-                    print("Evaluating loaded model")
+                    print("Evaluating loaded model" + CBLUE)
                     self._evaluate_dqn()
+                    print(CEND)
             except (AttributeError, ValueError):
                 print("Unable to load checkpoint")
 
+        self._current_opponent = cached_opponent
+
         nb_steps = config.get_num_training_steps()
 
-        print("Beginning training with " + str(nb_steps) + " steps against " + opponent_string)
+        print("Beginning training with " + str(nb_steps) + " steps")
         
         # Training
         train_start_time = time.time()
         try:
-            self.play_against(
-                env_algorithm=self._dqn_training,
-                opponent=opponent,
-                env_algorithm_kwargs={"dqn": self.dqn, "nb_steps": nb_steps},
-            )
+            NUM_INTERVAL_STEPS = 50000
+            num_intervals = math.ceil(nb_steps / NUM_INTERVAL_STEPS)
+            remaining_steps = nb_steps
+            for i in range(num_intervals):
+                step_count = min(remaining_steps, NUM_INTERVAL_STEPS)
+                remaining_steps -= step_count
+
+                if self._current_opponent != "ladder":
+                    opponent = config.get_opponent(battle_format=self.format, cycle_count=i)
+                    self._current_opponent = opponent.username
+
+                print("Playing against " + self._current_opponent)
+
+                self.play_against(
+                    env_algorithm=self._dqn_training,
+                    opponent=opponent,
+                    env_algorithm_kwargs={"dqn": self.dqn, "nb_steps": step_count},
+                )
+                
+                config.plot_history(self._history, self.format, self._current_opponent, i)
+
         except KeyboardInterrupt:
             print("\nKeyboard interrupt; going to finish up current battle and abort")
             self.complete_current_battle()
@@ -585,55 +579,58 @@ class RLPlayer(Gen8EnvSinglePlayer, Callback):
         train_end_time = train_start_time - time.time()
 
         print("Training complete in " + str(train_end_time) + " seconds. win rate: " + str(self.win_rate * 100.0) + "%")
+        self._current_opponent = ""
 
         if self.validate:
+            print(CGREEN)
             self._evaluate_dqn()
+            print(CEND)
 
     def _dqn_evaluation(self, player, dqn, nb_episodes):
         # Reset battle statistics
         player.reset_battles()
         dqn.test(player, nb_episodes=nb_episodes, visualize=True, verbose=True)
 
-        print(
-            "DQN Evaluation: %d victories out of %d episodes"
-            % (player.n_won_battles, nb_episodes)
-        )
-
     def _evaluate_dqn(self) -> None:
-        opponent = DefaultPlayer(battle_format="gen8randombattle")
-        second_opponent = RandomPlayer(battle_format="gen8randombattle")
-        third_opponent = MaxDamagePlayer(battle_format="gen8randombattle")
-        
+        nb_episodes = config.get_num_evaluation_episodes()
+
+        opponents = [
+            DefaultPlayer(battle_format="gen8randombattle"), 
+            RandomPlayer(battle_format="gen8randombattle"), 
+            MaxDamagePlayer(battle_format="gen8randombattle")
+        ]
+
+        wins = []
+
         # Evaluation
-        evaluate_start_time = time.time()
-        print("Results against default player:")
-        self.play_against(
-            env_algorithm=self._dqn_evaluation,
-            opponent=opponent,
-            env_algorithm_kwargs={"dqn": self.dqn, "nb_episodes": config.get_num_evaluation_episodes()},
-        )
-        evaluate_end_time = time.time() - evaluate_start_time
-        print("Evaluation took " + str(evaluate_end_time) + " seconds")
+        for opponent in opponents:
+            evaluate_start_time = time.time()
+            self._current_opponent = opponent.username
+            print("Results against " + self._current_opponent + ":")
 
-        evaluate_start_time = time.time()
-        print("Results against random player:")
-        self.play_against(
-            env_algorithm=self._dqn_evaluation,
-            opponent=second_opponent,
-            env_algorithm_kwargs={"dqn": self.dqn, "nb_episodes": config.get_num_evaluation_episodes()},
-        )
-        evaluate_end_time = time.time() - evaluate_start_time
-        print("Evaluation took " + str(evaluate_end_time) + " seconds")
+            self.play_against(
+                env_algorithm=self._dqn_evaluation,
+                opponent=opponent,
+                env_algorithm_kwargs={"dqn": self.dqn, "nb_episodes": nb_episodes},
+            )
 
-        evaluate_start_time = time.time()
-        print("\nResults against max player:")
-        self.play_against(
-            env_algorithm=self._dqn_evaluation,
-            opponent=third_opponent,
-            env_algorithm_kwargs={"dqn": self.dqn, "nb_episodes": config.get_num_evaluation_episodes()},
-        )
-        evaluate_end_time = time.time() - evaluate_start_time
-        print("Evaluation took " + str(evaluate_end_time) + " seconds")
+            wins.append((self._current_opponent, self.n_won_battles, self.n_lost_battles))
+
+            evaluate_end_time = time.time() - evaluate_start_time
+
+            print(
+                "DQN Evaluation: %d victories out of %d episodes against %s; took %d seconds"
+                % (self.n_won_battles, nb_episodes + 1, self._current_opponent, evaluate_end_time)
+            )
+
+            time.sleep(3)
+        print(wins)
+        print("\n")
+
+        time.sleep(5)
+
+        self._current_opponent = ""
+        return wins
 
     def _side_condition_id(self, side_conditions : Set[SideCondition]) -> float:
         output = 0.0

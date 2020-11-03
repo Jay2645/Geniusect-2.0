@@ -1,23 +1,41 @@
 #!/usr/bin/env python3
 
-import configparser
-import errno
-import sys
-import logging
-import os
-
-import src.geniusect.update_data as updater
-
-from tensorflow.keras.layers import Dense, Flatten, Dropout
-from tensorflow.keras.models import Sequential, Model
-
-log_level=logging.INFO
-
 # Update our stored data with the most recent from the server
+import src.geniusect.update_data as updater
 updater.update_pokedex()
 updater.update_itemdex()
 updater.update_movedex()
 updater.update_learnset()
+
+import codecs
+import configparser
+import errno
+import json
+import logging
+import os
+import sys
+import time
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+from tensorflow.keras.layers import Dense, Flatten, Dropout
+from tensorflow.keras.models import Sequential, Model
+from tensorflow.keras.optimizers import Adam
+
+from rl.agents.dqn import DQNAgent
+from rl.policy import LinearAnnealedPolicy, EpsGreedyQPolicy
+from rl.memory import SequentialMemory
+
+from poke_env.player.player import Player
+from poke_env.player.random_player import RandomPlayer
+
+from src.geniusect.neural_net.dqn_history import DQNHistory
+from src.geniusect.player.max_damage_player import MaxDamagePlayer
+from src.geniusect.player.default_player import DefaultPlayer
+
+log_level=logging.INFO
+cycle_offset = round(time.time()) % 3
 
 # Import the config
 secret_config = configparser.ConfigParser()
@@ -57,10 +75,25 @@ def get_num_training_steps() -> int:
     return int(ai_config.get("Train", "NumTrainingSteps"))
     
 def get_num_evaluation_episodes() -> int:
-    return int(ai_config.get("Train", "NumEvaluationEpisodes"))
+    return int(ai_config.get("Train", "NumEvaluationEpisodes")) - 1
 
 def get_train_against_ladder() -> bool:
-    return ai_config.getboolean("Train", "TrainAgainstLadder")
+    return ai_config.get("Train", "Opponent").lower() == "ladder"
+
+def get_opponent(battle_format = "gen8randombattle", cycle_count = 0) -> Player:
+    opponent_string = ai_config.get("Train", "Opponent").lower()
+    opponent_num = (cycle_count + cycle_offset) % 3
+
+    if opponent_string == "ladder":
+        return None
+    elif opponent_string == "default" or (opponent_string == "cycle" and opponent_num == 0):
+        return DefaultPlayer(battle_format=battle_format)
+    elif opponent_string == "random" or (opponent_string == "cycle" and opponent_num == 1):
+        return RandomPlayer(battle_format=battle_format)
+    elif opponent_string == "max" or (opponent_string == "cycle" and opponent_num == 2):
+        return MaxDamagePlayer(battle_format=battle_format)
+    else:
+        raise AttributeError()
 
 def get_input_drop_percent() -> float:
     return 1.0 - float(ai_config.get("Train", "DropoutKeepInputLayer"))
@@ -88,20 +121,135 @@ def get_checkpoint_dir() -> str:
 def get_step_timeout() -> float:
     return float(ai_config.get("Execution", "StepTimeout"))
 
-def build_model(input_layer_size, output_layer_size) -> Model:
+def get_num_warmup_steps() -> int:
+    return int(ai_config.get("DQN", "NumberWarmupSteps"))
     
+def get_gamma() -> float:
+    return float(ai_config.get("DQN", "Gamma"))
+
+def get_target_model_update() -> int:
+    return int(ai_config.get("DQN", "TargetModelUpdate"))
+
+def get_delta_clip() -> float:
+    return float(ai_config.get("DQN", "DeltaClip"))
+
+def get_use_double_dqn() -> bool:
+    return ai_config.getboolean("DQN", "UseDoubleDQN")
+
+def build_dqn(model : Model, output_layer_size : int):
+    memory = SequentialMemory(limit=get_num_training_steps(), window_length=1)
+
+    # Simple epsilon greedy
+    policy = LinearAnnealedPolicy(
+        EpsGreedyQPolicy(),
+        attr="eps",
+        value_max=1.0,
+        value_min=0.05,
+        value_test=0,
+        nb_steps=get_num_training_steps(),
+    )
+
+    # Defining our DQN
+    dqn = DQNAgent(
+        model=model,
+        nb_actions=output_layer_size,
+        policy=policy,
+        memory=memory,
+        nb_steps_warmup=get_num_warmup_steps(),
+        gamma=get_gamma(),
+        target_model_update=get_target_model_update(),
+        delta_clip=get_delta_clip(),
+        enable_double_dqn=get_use_double_dqn(),
+    )
+
+    optimizer = Adam(lr=0.00025)
+
+    dqn.compile(optimizer, metrics=["mae"])
+    return dqn
+
+def build_model(input_layer_size, output_layer_size) -> Model:
     model = Sequential()
-    model.add(Dense(2048, activation="elu", input_shape=(1, input_layer_size)))
+    model.add(Dense(input_layer_size, activation="elu", input_shape=(1, input_layer_size)))
     model.add(Flatten())
     model.add(Dropout(get_input_drop_percent()))
-    model.add(Dense(1024, activation="elu"))
+    model.add(Dense(512, activation="elu"))
     model.add(Dropout(get_hidden_drop_percent()))
-    model.add(Dense(256, activation="elu"))
-    model.add(Dropout(get_hidden_drop_percent()))
-    model.add(Dense(64, activation="elu"))
+    model.add(Dense(output_layer_size, activation="linear"))
     model.add(Dropout(get_hidden_drop_percent()))
     model.add(Dense(output_layer_size, activation="linear"))
 
     model.summary()
 
     return model
+
+def plot_history(history : DQNHistory, model_name : str, opponent_name : str, batch_num : int):
+    history_path = os.path.join("data", "models", model_name)
+
+    try:
+        os.makedirs(history_path)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
+
+    plt.clf()
+
+    # Plot history: Episode Rewards
+    rewards = history.history['episode_rewards']
+    reward_idx = [i + 1 for i in range(len(rewards))]
+    plt.scatter(reward_idx, rewards)
+
+    fitted_trendline = np.polyfit(reward_idx, rewards, 1)
+    fitted_trendline_1d = np.poly1d(fitted_trendline)
+    plt.plot(reward_idx, fitted_trendline_1d(reward_idx), "r--")
+
+    plt.title("Game Rewards for Geniusect over " + str(len(rewards)) + " games")
+    plt.ylabel("Reward")
+    plt.xlabel("Game")
+
+    plot_path = os.path.join(history_path, "episode-reward-" + str(batch_num) + ".png")
+    plt.savefig(plot_path)
+
+    plt.clf()
+
+    try:
+        handles = []
+
+        # The DQNAgent uses Huber Loss to calculate loss
+        # The Huber loss function balances between MAE and MSE
+        plt.title("Huber Loss for Geniusect over " + str(len(rewards)) + " games")
+        plt.ylabel('Loss')
+        plt.xlabel('Game')
+        handles = plt.plot(history.history['loss'], label='Loss')
+        plt.legend(handles=handles)
+        plot_path = os.path.join(history_path, "loss-" + str(batch_num) + ".png")
+        plt.savefig(plot_path)
+        plt.clf()
+
+        plt.title("Mean Absolute Error for Geniusect over " + str(len(rewards)) + " games")
+        plt.ylabel('Mean Absolute Error')
+        plt.xlabel('Game')
+        handles = plt.plot(history.history['mae'], label='Mean Absolute Error')
+        plt.legend(handles=handles)
+        plot_path = os.path.join(history_path, "mae-" + str(batch_num) + ".png")
+        plt.savefig(plot_path)
+        plt.clf()
+
+        plt.title("Mean Q for Geniusect over " + str(len(rewards)) + " games")
+        plt.ylabel('Mean Q')
+        plt.xlabel('Game')
+        handles = plt.plot(history.history['mean_q'], label='Mean Q')
+        plt.legend(handles=handles)
+        plot_path = os.path.join(history_path, "mean_q-" + str(batch_num) + ".png")
+        plt.savefig(plot_path)
+        plt.clf()
+
+        plt.title("Mean Epsilon for Geniusect over " + str(len(rewards)) + " games")
+        plt.ylabel('Epsilon')
+        plt.xlabel('Game')
+        handles = plt.plot(history.history['mean_eps'], label='Epsilon')
+        plt.legend(handles=handles)
+        plot_path = os.path.join(history_path, "mean_eps-" + str(batch_num) + ".png")
+        plt.savefig(plot_path)
+        plt.clf()
+    except KeyError:
+        pass
