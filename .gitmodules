@@ -1,3 +1,6 @@
 [submodule "poke-env"]
 	path = poke-env
 	url = git@github.com:Jay2645/poke-env.git
+[submodule "Pokemon-Showdown"]
+	path = Pokemon-Showdown
+	url = https://github.com/hsahovic/Pokemon-Showdown.git
