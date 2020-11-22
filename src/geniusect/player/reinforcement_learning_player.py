@@ -11,6 +11,7 @@ import tensorflow as tf
 
 import src.geniusect.config as config
 
+from tensorflow.python.keras import backend as K
 from rl.callbacks import Callback
 
 from typing import Any, Callable, List, Optional, Tuple, Union, Set
@@ -26,15 +27,12 @@ from poke_env.environment.pokemon_type import PokemonType
 from poke_env.environment.side_condition import SideCondition
 from poke_env.environment.status import Status
 from poke_env.player.env_player import Gen8EnvSinglePlayer
-from poke_env.player.random_player import RandomPlayer
 from poke_env.player_configuration import PlayerConfiguration
 from poke_env.server_configuration import ServerConfiguration
 from poke_env.teambuilder.teambuilder import Teambuilder
 from poke_env.environment.weather import Weather
 
 from src.geniusect.neural_net.dqn_history import DQNHistory
-from src.geniusect.player.max_damage_player import MaxDamagePlayer
-from src.geniusect.player.default_player import DefaultPlayer
 
 AVAILABLE_STATS = ["atk", "def", "spa", "spd", "spe", "evasion", "accuracy"]
 NUM_MOVES = 4
@@ -108,10 +106,18 @@ class RLPlayer(Gen8EnvSinglePlayer, Callback):
         self._validate_untrained = False
 
         self._history = DQNHistory()
+        self._last_reward = None
+        self._batch_count = 0
+        self._num_steps_taken = 0
+
         self._timer = None
         self._last_step_start_time = time.time()
         # Only join lobbies on localhost
-        self.done_joining_lobby = self.validate and "localhost" not in self._server_url
+        self._on_local_server = "localhost" in self._server_url
+        self._done_joining_lobby = False
+        self._rating = 1000
+        self._best_batch_num = None
+        self._best_mae = None
 
         self._taken_actions = np.negative(np.ones(MOVE_MEMORY))
         self._current_opponent = ""
@@ -120,37 +126,39 @@ class RLPlayer(Gen8EnvSinglePlayer, Callback):
             self._train()
 
     async def _battle_started_callback(self, battle : Battle) -> None:
-        if not self.done_joining_lobby:
+        if self._on_local_server and not self._done_joining_lobby:
             await self._send_message("/join lobby")
-            self.done_joining_lobby = True
+            self._done_joining_lobby = True
 
-        await self._send_message("/timer on", battle.battle_tag)
-        await self._send_message("Hi, I'm a \"Deep Q\" learning bot named Geniusect! Every turn, I gather up to " + str(self._get_layer_size()) + " pieces of data from the game and feed them into a neural network.", battle.battle_tag)
-        await self._send_message("If I do good (like making your Pokemon faint and keeping all of mine alive), I get a virtual lollipop. If I do bad, I get put into time-out. Eventually, I'll learn the rules of the game and what moves to make in the right situations so I get as many lollipops as I can.", battle.battle_tag)
-        if self.n_finished_battles == 0:
-            if self.train:
-                await self._send_message("I'm in training and this is my first game this session. I'm basically going to do random things and learn how they change the game, so I can find out what's good and what's bad.", battle.battle_tag)
-        else:
-            if self.win_rate <= 0.6:
-                is_dumb = "Despite my name, I'm actually pretty dumb. "
-            else:
-                is_dumb = ""
-            await self._send_message(is_dumb + "I currently have a " + str(round(self.win_rate * 100.0)) + "% win rate out of " + str(self.n_finished_battles) + " games.", battle.battle_tag)
-        await self._send_message("I won't be able to reply to you, since I'm a bot with no human directly supervising me (although you might see " + config.get_human_username() +  " spectate from time to time).", battle.battle_tag)
+        self.logger.info("New battle started: " + battle.battle_tag)
+
+        if not self._on_local_server:
+            await self._send_message("/timer on", battle.battle_tag)
+            await self._send_message("Hi, I'm a \"Deep Q\" learning bot named Geniusect! I'm still learning how to play, so I'll do silly things a lot. I won't be able to reply, although you might see " + config.get_human_username() +  " spectate.", battle.battle_tag)
 
     async def _battle_finished_callback(self, battle : Battle) -> None:
         await super(RLPlayer, self)._battle_finished_callback(battle)
 
         # Forget all moves we've done as they are no longer relevant
         self._taken_actions = np.negative(np.ones(MOVE_MEMORY))
+        rating = battle.rating
+        if rating is None:
+            self._rating = 1000
+        else:
+            self._rating = rating
 
-        if self.validate and self.done_joining_lobby:
-            await self._send_message("  Turn %4d. | [%s][%3d/%3dhp] %10.10s - %10.10s [%3d%%hp][%s]"
+        config.plot_history(self._history, self.format, self._current_opponent, self._batch_count)
+
+        if self._on_local_server and self._done_joining_lobby:
+            if self._last_reward is not None:
+                await self._send_message("Last reward: " + str(self._last_reward), "lobby")
+                
+            await self._send_message("Turn %4d. | [%s][%3d/%3dhp] %10.10s - %10.10s [%3d%%hp][%s]"
             % (
                 battle.turn,
                 "".join(
                     [
-                        "⦻" if mon.fainted else "●"
+                        "⦻" if mon.fainted else " ● "
                         for mon in battle.team.values()
                     ]
                 ),
@@ -162,12 +170,16 @@ class RLPlayer(Gen8EnvSinglePlayer, Callback):
                 or 0,
                 "".join(
                     [
-                        "⦻" if mon.fainted else "●"
+                        "⦻" if mon.fainted else " ● "
                         for mon in battle.opponent_team.values()
                     ]
                 ),
             ),
             "lobby")
+        else:
+            self.render()
+            print("")
+            time.sleep(10)
 
     def _action_to_move(self, action: int, battle: Battle) -> str:
         # Place oldest action at the front of the list (rotating/shifting the list by 1)
@@ -178,7 +190,9 @@ class RLPlayer(Gen8EnvSinglePlayer, Callback):
         # e.g. 5,4,3,2
         self._taken_actions[0] = action / len(self._ACTION_SPACE)
 
-        return super(RLPlayer, self)._action_to_move(action, battle)
+        move_name = super(RLPlayer, self)._action_to_move(action, battle)
+        self.logger.info(self.username + " is taking action " + move_name)
+        return move_name
 
     def embed_battle(self, battle):
         # Rescale to 100 to facilitate learning
@@ -264,18 +278,18 @@ class RLPlayer(Gen8EnvSinglePlayer, Callback):
         our_pokemon_observations = []
         for mon in battle.team.values():
             pokemon_observations = self._gather_pokemon_observations(mon, battle.opponent_active_pokemon)
-            if len(pokemon_observations) != 78:
+            if len(pokemon_observations) != 85:
                 raise Exception()
             our_pokemon_observations = np.append(our_pokemon_observations, pokemon_observations)
 
         opponent_pokemon_observations = []
         for mon in battle.opponent_team.values():
             pokemon_observations = self._gather_pokemon_observations(mon, battle.active_pokemon)
-            if len(pokemon_observations) != 78:
+            if len(pokemon_observations) != 85:
                 raise Exception()
             opponent_pokemon_observations = np.append(opponent_pokemon_observations, pokemon_observations)
         remaining_backfill = 6 - len(battle.opponent_team)
-        opponent_pokemon_observations = np.append(opponent_pokemon_observations, np.negative(np.ones(78 * remaining_backfill)))
+        opponent_pokemon_observations = np.append(opponent_pokemon_observations, np.negative(np.ones(85 * remaining_backfill)))
 
         if len(our_pokemon_observations) != len(opponent_pokemon_observations):
             raise Exception()
@@ -334,6 +348,11 @@ class RLPlayer(Gen8EnvSinglePlayer, Callback):
         else:
             ability = -1
 
+        possible_abilities = -np.ones(3)
+        pkm_possible_abilities = list(pkm.possible_abilities.values())
+        for i in range(len(pkm_possible_abilities)):
+            possible_abilities[i] = ABILITYDEX[to_id_str(pkm_possible_abilities[i])] / len(ABILITYDEX)
+
         try:
             item = ITEMS[to_id_str(pkm.item)]["num"] / len(ITEMS)
         except (AttributeError, KeyError, TypeError):
@@ -355,6 +374,7 @@ class RLPlayer(Gen8EnvSinglePlayer, Callback):
                 [type_1, type_2],
                 [status],
                 [ability],
+                possible_abilities,
                 [item],
                 moves,
                 boosts
@@ -375,6 +395,7 @@ class RLPlayer(Gen8EnvSinglePlayer, Callback):
         moves_recoil = -np.ones(NUM_MOVES)
         moves_sleep_usable = -np.ones(NUM_MOVES)
         moves_stall = -np.ones(NUM_MOVES)
+        moves_priority = np.zeros(NUM_MOVES)
 
         moves_all_boosts = np.zeros(NUM_MOVES * len(AVAILABLE_STATS))
 
@@ -394,6 +415,7 @@ class RLPlayer(Gen8EnvSinglePlayer, Callback):
             )  # Simple rescaling to facilitate learning
 
             moves_categories[i] = int(move.category) / len(MoveCategory)
+            moves_priority[i] = move.priority / 6
 
             if move.force_switch:
                 moves_switch[i] = 1
@@ -436,7 +458,7 @@ class RLPlayer(Gen8EnvSinglePlayer, Callback):
                     chance = effect["chance"] / 100
                     secondary_boosts = effect["boosts"]
                 except KeyError:
-                    pass
+                    continue
 
                 for j in range(len(AVAILABLE_STATS)):
                     current_index = start_boost_index + j
@@ -456,6 +478,7 @@ class RLPlayer(Gen8EnvSinglePlayer, Callback):
                 moves_recoil,
                 moves_sleep_usable,
                 moves_stall,
+                moves_priority,
                 moves_all_boosts
             ]
         )
@@ -473,6 +496,10 @@ class RLPlayer(Gen8EnvSinglePlayer, Callback):
         )
 
     def on_step_begin(self, step, logs):
+        if not self._on_local_server:
+            self.render()
+            print("")
+
         self._last_step_start_time = time.time()
 
         timeout = config.get_step_timeout()
@@ -489,29 +516,50 @@ class RLPlayer(Gen8EnvSinglePlayer, Callback):
     def on_step_end(self, step, logs):
         self._timer.cancel()
         self._timer = None
+        self._num_steps_taken += 1
+        self._history.history.setdefault("best_q", []).append(self.dqn.best_q)
 
     def on_episode_end(self, episode, logs):
         """ Render environment at the end of each action """
-        if not self.done_joining_lobby:
-            print("")
-            self.render(mode='human')
+        self._history.history.setdefault("rating", []).append(self._rating)
+        self._history.history.setdefault("win_rate", []).append(self.win_rate)
+
+        self._last_reward = logs["episode_reward"]
+        try:
+            if not math.isnan(logs["val_loss"]) and (self._best_batch_num is None or self._best_mae > logs["val_loss"]):
+                self._best_batch_num = self._num_steps_taken
+                self._best_mae = logs["val_loss"]
+        except KeyError:
+            pass
 
     def _get_checkpoint_file(self) -> str:
-        checkpoint_dir = config.get_checkpoint_dir()
-        return os.path.join(checkpoint_dir, self.format + ".ckpt")
+        checkpoint_dir = config.get_checkpoint_dir(self.format)
+        return os.path.join(checkpoint_dir, "geniusect.ckpt")
 
     def _get_layer_size(self) -> int:
-        return 1381
+        return 1469
 
     # This is the function that will be used to train the dqn
     def _dqn_training(self, player, dqn, nb_steps):
         cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=self._get_checkpoint_file(),
-                                                            save_weights_only=True,
-                                                    verbose=0)
+                                                        save_weights_only=True,
+                                                        save_best_only=True,
+                                                        verbose=1,
+                                                        monitor="val_loss")
+        early_callback = tf.keras.callbacks.EarlyStopping(patience=1000,
+                                                        verbose=1,
+                                                        monitor="val_loss",
+                                                        mode="min",
+                                                        min_delta=0.0001,
+                                                        restore_best_weights=True)
+        tb_callback = tf.keras.callbacks.TensorBoard(log_dir=config.get_tensorboard_log_dir(self.format),
+                                                        write_graph=False, 
+                                                        histogram_freq=100)
         try:
-            dqn.fit(player, nb_steps=nb_steps, callbacks=[self, cp_callback, self._history])
-        except Exception:
-            pass
+            dqn.fit(player, nb_steps=nb_steps, callbacks=[self, tb_callback, cp_callback, early_callback, self._history])
+        except Exception as e:
+            print("Exception during training: " + str(e))
+            self._dqn_training(player, dqn, nb_steps - self._num_steps_taken)
 
     def _train(self) -> None:
         if config.get_train_against_ladder():
@@ -528,7 +576,7 @@ class RLPlayer(Gen8EnvSinglePlayer, Callback):
 
         if self.use_checkpoint:
             print("Trying to load from checkpoint")
-            checkpoint_dir = config.get_checkpoint_dir()
+            checkpoint_dir = config.get_checkpoint_dir(self.format)
             try:
                 latest = tf.train.latest_checkpoint(checkpoint_dir)
                 self.model.load_weights(latest)
@@ -543,40 +591,55 @@ class RLPlayer(Gen8EnvSinglePlayer, Callback):
 
         self._current_opponent = cached_opponent
 
-        nb_steps = config.get_num_training_steps()
-
-        print("Beginning training with " + str(nb_steps) + " steps")
-        
         # Training
         train_start_time = time.time()
-        try:
-            NUM_INTERVAL_STEPS = 50000
-            num_intervals = math.ceil(nb_steps / NUM_INTERVAL_STEPS)
-            remaining_steps = nb_steps
-            for i in range(num_intervals):
-                step_count = min(remaining_steps, NUM_INTERVAL_STEPS)
-                remaining_steps -= step_count
+    
+        nb_steps = config.get_num_training_steps()
+        cycle_count = 0
+        self.reset_battles()
+        while nb_steps > 0:
+            self._best_batch_num = None
+            self._best_mae = None
+            self._num_steps_taken = 0
 
+            old_lr = float(K.get_value(self.dqn.trainable_model.optimizer.lr))
+            print("Beginning training with " + str(nb_steps) + " steps, and learning rate " + str(old_lr))
+
+            self.dqn.trainable_model.stop_training = False
+            
+            try:
                 if self._current_opponent != "ladder":
-                    opponent = config.get_opponent(battle_format=self.format, cycle_count=i)
+                    opponent = config.get_opponent(battle_format=self.format, cycle_count=cycle_count)
                     self._current_opponent = opponent.username
+                else:
+                    opponent = None
 
                 print("Playing against " + self._current_opponent)
 
-                self.play_against(
-                    env_algorithm=self._dqn_training,
-                    opponent=opponent,
-                    env_algorithm_kwargs={"dqn": self.dqn, "nb_steps": step_count},
-                )
+                self._start_battle_internal(opponent, nb_steps)
                 
-                config.plot_history(self._history, self.format, self._current_opponent, i)
+                if self._num_steps_taken <= 0:
+                    break
 
-        except KeyboardInterrupt:
-            print("\nKeyboard interrupt; going to finish up current battle and abort")
-            self.complete_current_battle()
-            print("Final battle complete")
+                if self._best_mae is not None:
+                    nb_steps -= self._best_batch_num
+                else:
+                    nb_steps -= self._num_steps_taken
+                cycle_count += 1
 
-        train_end_time = train_start_time - time.time()
+                if cycle_count % len(config.opponents) == 0:
+                    if old_lr > 0.00000001:
+                        new_lr = old_lr * 0.1
+                        K.set_value(self.dqn.trainable_model.optimizer.lr, new_lr)
+                        print("Adjusting learning rate from " + str(old_lr) + " to " + str(new_lr))
+
+            except KeyboardInterrupt:
+                print("\nKeyboard interrupt; going to finish up current battle and abort")
+                self.complete_current_battle()
+                print("Final battle complete")
+                nb_steps = 0
+
+        train_end_time = time.time() - train_start_time
 
         print("Training complete in " + str(train_end_time) + " seconds. win rate: " + str(self.win_rate * 100.0) + "%")
         self._current_opponent = ""
@@ -586,6 +649,17 @@ class RLPlayer(Gen8EnvSinglePlayer, Callback):
             self._evaluate_dqn()
             print(CEND)
 
+    def _start_battle_internal(self, opponent, nb_steps):
+        try:
+            self.play_against(
+                env_algorithm=self._dqn_training,
+                opponent=opponent,
+                env_algorithm_kwargs={"dqn": self.dqn, "nb_steps": nb_steps},
+            )
+        except OSError:
+            time.sleep(1)
+            self._start_battle_internal(opponent, nb_steps)
+
     def _dqn_evaluation(self, player, dqn, nb_episodes):
         # Reset battle statistics
         player.reset_battles()
@@ -594,16 +668,10 @@ class RLPlayer(Gen8EnvSinglePlayer, Callback):
     def _evaluate_dqn(self) -> None:
         nb_episodes = config.get_num_evaluation_episodes()
 
-        opponents = [
-            DefaultPlayer(battle_format="gen8randombattle"), 
-            RandomPlayer(battle_format="gen8randombattle"), 
-            MaxDamagePlayer(battle_format="gen8randombattle")
-        ]
-
         wins = []
 
         # Evaluation
-        for opponent in opponents:
+        for opponent in config.opponents.values():
             evaluate_start_time = time.time()
             self._current_opponent = opponent.username
             print("Results against " + self._current_opponent + ":")

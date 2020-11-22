@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 
+import random
+
+from poke_env.environment.battle import Battle
+from poke_env.environment.move_category import MoveCategory
 from poke_env.player.random_player import RandomPlayer
 from poke_env.player_configuration import PlayerConfiguration
 from poke_env.server_configuration import ServerConfiguration
 from poke_env.teambuilder.teambuilder import Teambuilder
+
+import src.geniusect.config as config
 
 from typing import Any, Callable, List, Optional, Tuple, Union, Set
 
@@ -53,30 +59,64 @@ class MaxDamagePlayer(RandomPlayer):
             start_listening=start_listening,
         )
 
+        self._tryhard_percent = config.get_starting_tryhard()
+        self._tryhard_floor = config.get_tryhard_floor()
+    
+    async def _battle_started_callback(self, battle : Battle) -> None:
+        await self._send_message("Tryhard percent: " + str(self._tryhard_percent), battle.battle_tag)
+
+    async def _battle_finished_callback(self, battle: Battle) -> None:
+        if battle.won:
+            if self._tryhard_percent > self._tryhard_floor:
+                self._tryhard_percent -= 0.01
+        else:
+            if self._tryhard_percent < 1.0:
+                self._tryhard_percent += 0.01
+
     def choose_move(self, battle):
         # If the player can attack, it will
-        if battle.available_moves:
+        random_num = random.random()
+        if battle.available_moves and random_num < self._tryhard_percent:
+            our_pokemon = battle.active_pokemon
+            boosts = our_pokemon.boosts
+
             opponent_pkm = battle.opponent_active_pokemon
             
             best_power = -1
             best_move = battle.available_moves[0]
             for move in battle.available_moves:
+                move_category = move.category
+
+                if move_category == MoveCategory.PHYSICAL:
+                    current_boosts = boosts["atk"]
+                elif move_category == MoveCategory.SPECIAL:
+                    current_boosts = boosts["spa"]
+                else:
+                    current_boosts = 0
+
+                if current_boosts >= 0:
+                    current_boosts = (current_boosts + 2) / 2
+                else:
+                    current_boosts = 2 / ((-current_boosts) + 2)
+
                 dmg_multiplier = 1
+                stab = 1
                 if move.type:
                     dmg_multiplier = move.type.damage_multiplier(
                         opponent_pkm.type_1,
                         opponent_pkm.type_2,
                     )
+                    if move.type == our_pokemon.type_1 or move.type == our_pokemon.type_2:
+                        stab = 1.5
                 
-                scaled_power = dmg_multiplier * move.base_power
+                scaled_power = dmg_multiplier * move.base_power * current_boosts * move.accuracy * stab
                 if scaled_power > best_power:
                     best_power = scaled_power
                     best_move = move
 
-            # Finds the best move among available ones
-            return self.create_order(best_move)
-
-        # If no attack is available, a random switch will be made
-        else:
-            return self.choose_random_move(battle)
+            if best_power > 30:
+                # Finds the best move among available ones
+                return self.create_order(best_move)
+        
+        return self.choose_random_move(battle)
 			

@@ -4,8 +4,12 @@
         "${workspaceFolder}"
     ],
     "python.pythonPath": "C:\\Users\\disne\\AppData\\Local\\Programs\\Python\\Python37\\python.exe",
-    "python.languageServer": "Microsoft",
+    "python.languageServer": "Pylance",
     "cSpell.words": [
         "geniusect"
+    ],
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}/poke-env",
+        "${workspaceFolder}"
     ]
 }
